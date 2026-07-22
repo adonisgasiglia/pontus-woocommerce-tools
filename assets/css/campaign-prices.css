@@ -52,6 +52,21 @@
 }
 
 .pwt-plan-price-shortcode {
-	color: #17384d;
+	display: inline-flex;
+	align-items: baseline;
+	gap: 0.25em;
+	color: #3d8ec4;
 	font: inherit;
+	font-weight: 700;
+}
+
+.pwt-plan-price-shortcode .woocommerce-Price-amount {
+	color: inherit;
+	font-weight: inherit;
+}
+
+.pwt-plan-price-period {
+	color: inherit;
+	font-size: 0.65em;
+	font-weight: 500;
 }

@@ -193,6 +193,7 @@ final class Campaign_Links {
 			array(
 				'currency'    => get_woocommerce_currency(),
 				'locale'      => str_replace( '_', '-', get_locale() ),
+				'period'      => __( '/mês', 'pontus-woocommerce-tools' ),
 				'mode'        => $coupon ? (string) $coupon->get_meta( self::META_MODE, true ) : '',
 				'amount'      => $coupon ? (float) $coupon->get_meta( self::META_AMOUNT, true ) : 0,
 				'targetCount' => count( $targets ),
@@ -215,8 +216,9 @@ final class Campaign_Links {
 		$price   = $product instanceof \WC_Product ? (float) $product->get_price() : 189.0;
 
 		return sprintf(
-			'<span class="pwt-plan-price-shortcode" data-pwt-plan-price>%s</span>',
-			wp_kses_post( wc_price( $price ) )
+			'<span class="pwt-plan-price-shortcode" data-pwt-plan-price>%1$s<span class="pwt-plan-price-period">%2$s</span></span>',
+			wp_kses_post( wc_price( $price ) ),
+			esc_html__( '/mês', 'pontus-woocommerce-tools' )
 		);
 	}
 
