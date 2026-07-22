@@ -129,15 +129,22 @@
 			priceElement.dataset.pwtCampaignSignature = signature;
 			priceElement.classList.add( 'pwt-campaign-summary-price' );
 
+			const periodHtml =
+				'<span class="pwt-plan-price-period">' +
+				( window.pwtCampaignPrices.period || '/mês' ) +
+				'</span>';
+
 			if ( saleTotal < originalTotal ) {
 				priceElement.innerHTML =
 					'<del>' + formatter.format( originalTotal ) + '</del>' +
-					'<ins>' + formatter.format( saleTotal ) + '</ins>';
+					'<ins>' + formatter.format( saleTotal ) + '</ins>' +
+					periodHtml;
 			} else {
 				priceElement.innerHTML =
 					'<span class="woocommerce-Price-amount amount"><bdi>' +
 					formatter.format( saleTotal ) +
-					'</bdi></span>';
+					'</bdi></span>' +
+					periodHtml;
 			}
 		} );
 	}
