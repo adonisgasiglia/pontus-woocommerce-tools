@@ -55,9 +55,12 @@
 		}
 
 		const configured = window.pwtCampaignPrices.prices[ target ];
-		const dataPrice = Number.parseFloat( input.dataset.price );
+		const defaultPrice = Number.parseFloat( input.dataset.defaultPrice );
+		const currentPrice = Number.parseFloat( input.dataset.price );
 		const fallback = configured ? Number( configured.original ) : 0;
-		const original = Number.isFinite( dataPrice ) && dataPrice > 0 ? dataPrice : fallback;
+		const original = Number.isFinite( defaultPrice ) && defaultPrice > 0
+			? defaultPrice
+			: ( Number.isFinite( currentPrice ) && currentPrice > 0 ? currentPrice : fallback );
 
 		return {
 			wrapper,

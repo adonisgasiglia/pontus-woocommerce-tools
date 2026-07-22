@@ -5,15 +5,24 @@
 }
 
 .pwt-campaign-option-price del {
-	color: rgba(255, 255, 255, 0.78);
-	text-decoration-color: rgba(255, 255, 255, 0.9);
+	color: #64748b;
+	text-decoration-color: #64748b;
 	text-decoration-thickness: 1px;
 }
 
 .pwt-campaign-option-price ins {
-	color: #fff;
+	color: #17384d;
 	font-weight: 700;
 	text-decoration: none;
+}
+
+.yith-wapo-option:has(.yith-wapo-option-value:checked) .pwt-campaign-option-price del {
+	color: rgba(255, 255, 255, 0.78);
+	text-decoration-color: rgba(255, 255, 255, 0.9);
+}
+
+.yith-wapo-option:has(.yith-wapo-option-value:checked) .pwt-campaign-option-price ins {
+	color: #fff;
 }
 
 .pwt-campaign-option-price .sign {
