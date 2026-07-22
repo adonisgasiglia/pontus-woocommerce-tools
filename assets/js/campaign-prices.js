@@ -1,6 +1,41 @@
 ( function () {
 	'use strict';
 
+	const campaignStorageKey = 'pwt_campaign_coupon';
+
+	function bridgeCampaignToCheckout() {
+		const config = window.pwtCampaignPrices || {};
+		const queryArg = config.queryArg || 'pwt_coupon';
+		let couponCode = config.couponCode || '';
+
+		try {
+			if ( couponCode ) {
+				window.sessionStorage.setItem( campaignStorageKey, couponCode );
+			} else {
+				couponCode = window.sessionStorage.getItem( campaignStorageKey ) || '';
+			}
+		} catch ( error ) {
+			// Continue with the server-provided code when storage is unavailable.
+		}
+
+		if ( ! config.isCheckout || ! couponCode ) {
+			return false;
+		}
+
+		const checkoutUrl = new URL( window.location.href );
+		if ( checkoutUrl.searchParams.has( queryArg ) ) {
+			return false;
+		}
+
+		checkoutUrl.searchParams.set( queryArg, couponCode );
+		window.location.replace( checkoutUrl.toString() );
+		return true;
+	}
+
+	if ( bridgeCampaignToCheckout() ) {
+		return;
+	}
+
 	if ( ! window.pwtCampaignPrices || ! window.pwtCampaignPrices.prices ) {
 		return;
 	}
