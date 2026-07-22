@@ -70,6 +70,16 @@ Ao acessar esse endereço, o plugin:
 
 Para campanhas de valor fixo, recomenda-se selecionar apenas um componente por cupom. Isso mantém a comunicação visual do preço idêntica ao desconto final.
 
+## Total dinâmico no Elementor
+
+Use o shortcode abaixo no lugar do widget **WooCommerce Product Price**:
+
+```text
+[pontus_preco_plano]
+```
+
+O shortcode começa com o valor-base do Escritório Inteligente e soma somente os adicionais marcados. Quando uma campanha está ativa, apresenta o total original riscado e o total promocional em azul.
+
 ## Cálculo
 
 O plugin lê as opções selecionadas em `yith_wapo_options` e utiliza o preço informado pelo YITH. Os valores atuais de R$ 50 para Atendimento Telefônico e R$ 350 para Pacote Mais Reuniões são usados apenas como fallback quando o YITH não fornece o preço no item do carrinho.

@@ -98,9 +98,7 @@
 	}
 
 	function renderSummaryPrice() {
-		const priceElements = document.querySelectorAll(
-			'.elementor-element-3a531f9 .price, [data-id="3a531f9"] .price'
-		);
+		const priceElements = document.querySelectorAll( '[data-pwt-plan-price]' );
 
 		if ( ! priceElements.length || ! window.pwtCampaignPrices.basePrice ) {
 			return;
@@ -157,9 +155,11 @@
 	} );
 	window.addEventListener( 'load', renderCampaignPrices );
 
-	const observer = new MutationObserver( renderCampaignPrices );
-	observer.observe( document.documentElement, {
-		childList: true,
-		subtree: true
-	} );
+	if ( Object.keys( window.pwtCampaignPrices.prices ).length || document.querySelector( '[data-pwt-plan-price]' ) ) {
+		const observer = new MutationObserver( renderCampaignPrices );
+		observer.observe( document.documentElement, {
+			childList: true,
+			subtree: true
+		} );
+	}
 }() );
