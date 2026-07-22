@@ -35,13 +35,6 @@ final class Campaign_Links {
 	private static $instance = null;
 
 	/**
-	 * Whether the current coupon application was initiated by the campaign.
-	 *
-	 * @var bool
-	 */
-	private $is_applying_campaign_coupon = false;
-
-	/**
 	 * Returns the shared module instance.
 	 *
 	 * @return Campaign_Links
@@ -70,7 +63,6 @@ final class Campaign_Links {
 
 		add_filter( 'woocommerce_add_to_cart_redirect', array( $this, 'add_campaign_to_checkout_redirect' ), 999, 2 );
 		add_filter( 'woocommerce_add_to_cart_form_action', array( $this, 'add_campaign_to_cart_form_action' ), 999 );
-		add_filter( 'woocommerce_coupon_message', array( $this, 'filter_automatic_coupon_message' ), 10, 3 );
 		add_filter( 'woocommerce_get_price_html', array( $this, 'filter_main_product_price_html' ), 20, 2 );
 		add_shortcode( 'pontus_preco_plano', array( $this, 'render_plan_price_shortcode' ) );
 	}
@@ -183,43 +175,17 @@ final class Campaign_Links {
 			return;
 		}
 
-		$this->is_applying_campaign_coupon = true;
+		$previous_success_notices = function_exists( 'wc_get_notices' )
+			? wc_get_notices( 'success' )
+			: array();
 
-		try {
-			WC()->cart->apply_coupon( $code );
-		} finally {
-			$this->is_applying_campaign_coupon = false;
+		WC()->cart->apply_coupon( $code );
+
+		if ( function_exists( 'wc_get_notices' ) && function_exists( 'wc_set_notices' ) ) {
+			$notices            = wc_get_notices();
+			$notices['success'] = $previous_success_notices;
+			wc_set_notices( $notices );
 		}
-	}
-
-	/**
-	 * Hides only the success notice created by automatic campaign application.
-	 *
-	 * Manual coupon messages remain unchanged.
-	 *
-	 * @param string    $message      Coupon message.
-	 * @param int       $message_code WooCommerce message code.
-	 * @param WC_Coupon $coupon       Coupon object.
-	 * @return string
-	 */
-	public function filter_automatic_coupon_message( $message, $message_code, $coupon ) {
-		if (
-			! $this->is_applying_campaign_coupon
-			|| \WC_Coupon::WC_COUPON_SUCCESS !== $message_code
-			|| ! $coupon instanceof \WC_Coupon
-		) {
-			return $message;
-		}
-
-		$campaign_code = function_exists( 'WC' ) && WC()->session
-			? (string) WC()->session->get( self::SESSION_KEY )
-			: '';
-
-		if ( wc_format_coupon_code( $coupon->get_code() ) !== wc_format_coupon_code( $campaign_code ) ) {
-			return $message;
-		}
-
-		return '';
 	}
 
 	/**
