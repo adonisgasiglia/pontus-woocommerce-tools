@@ -39,7 +39,7 @@ O plugin usa a branch `main` como origem das versões estáveis. Quando a versã
 
 1. Acesse **Marketing > Cupons** no WooCommerce.
 2. Crie ou edite um cupom.
-3. Em **Dados do cupom**, mantenha o tipo de desconto nativo desejado. O plugin zerará o desconto nativo quando o modo Pontus estiver ativo.
+3. Em **Dados do cupom**, configure as opções Pontus. Quando esse modo estiver ativo, o plugin usará internamente o desconto fixo de carrinho para apresentar uma única linha no resumo.
 4. Marque **Desconto em adicionais Pontus**.
 5. Escolha a modalidade:
    - **Percentual**: aplica a porcentagem informada ao total dos adicionais elegíveis;
@@ -55,7 +55,7 @@ O cupom somente será aceito quando o carrinho contiver pelo menos um adicional 
 
 O plugin lê as opções selecionadas em `yith_wapo_options` e utiliza o preço informado pelo YITH. Os valores atuais de R$ 50 para Atendimento Telefônico e R$ 350 para Pacote Mais Reuniões são usados apenas como fallback quando o YITH não fornece o preço no item do carrinho.
 
-Cupons Pontus aplicados em sequência nunca podem descontar mais que o total dos adicionais elegíveis.
+No resumo do pedido, o cupom e o desconto aparecem em uma única linha, identificando os adicionais contemplados.
 
 ## Próximas etapas
 
