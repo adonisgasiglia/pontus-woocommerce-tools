@@ -152,10 +152,6 @@ final class Campaign_Links {
 	 * Loads the YITH add-on sale-price presentation.
 	 */
 	public function enqueue_campaign_assets() {
-		if ( ! is_product() ) {
-			return;
-		}
-
 		$coupon = $this->get_campaign_coupon();
 		if ( ! $coupon ) {
 			return;
