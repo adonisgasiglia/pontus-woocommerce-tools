@@ -272,7 +272,7 @@ final class Coupon_Addons {
 			$cart->add_fee(
 				sprintf(
 					/* translators: %s: coupon code. */
-					__( 'Cupom %s — adicionais', 'pontus-woocommerce-tools' ),
+					__( 'Cupom %s: adicionais', 'pontus-woocommerce-tools' ),
 					wc_format_coupon_code( $coupon_code )
 				),
 				-1 * $discount,
