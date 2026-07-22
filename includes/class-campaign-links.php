@@ -61,6 +61,7 @@ final class Campaign_Links {
 		add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_campaign_assets' ) );
 
 		add_filter( 'woocommerce_add_to_cart_redirect', array( $this, 'add_campaign_to_checkout_redirect' ), 999, 2 );
+		add_filter( 'woocommerce_add_to_cart_form_action', array( $this, 'add_campaign_to_cart_form_action' ), 999 );
 		add_filter( 'woocommerce_get_price_html', array( $this, 'filter_main_product_price_html' ), 20, 2 );
 		add_shortcode( 'pontus_preco_plano', array( $this, 'render_plan_price_shortcode' ) );
 	}
@@ -84,6 +85,29 @@ final class Campaign_Links {
 			}
 		}
 
+	}
+
+	/**
+	 * Sends the product form directly to checkout with the campaign code.
+	 *
+	 * This runs before Elementor or YITH can bypass the standard WooCommerce
+	 * post-add-to-cart redirect.
+	 *
+	 * @param string $url Original form action.
+	 * @return string
+	 */
+	public function add_campaign_to_cart_form_action( $url ) {
+		$coupon = $this->get_campaign_coupon();
+		if ( ! $coupon ) {
+			return $url;
+		}
+
+		global $product;
+		if ( $product instanceof \WC_Product && Coupon_Addons::PRODUCT_ID !== $product->get_id() ) {
+			return $url;
+		}
+
+		return add_query_arg( self::QUERY_ARG, $coupon->get_code(), wc_get_checkout_url() );
 	}
 
 	/**
