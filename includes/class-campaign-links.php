@@ -193,6 +193,7 @@ final class Campaign_Links {
 			array(
 				'currency'    => get_woocommerce_currency(),
 				'locale'      => str_replace( '_', '-', get_locale() ),
+				'period'      => __( '/mês', 'pontus-woocommerce-tools' ),
 				'mode'        => $coupon ? (string) $coupon->get_meta( self::META_MODE, true ) : '',
 				'amount'      => $coupon ? (float) $coupon->get_meta( self::META_AMOUNT, true ) : 0,
 				'targetCount' => count( $targets ),
