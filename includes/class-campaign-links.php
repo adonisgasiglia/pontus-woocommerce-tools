@@ -57,6 +57,7 @@ final class Campaign_Links {
 		add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_campaign_assets' ) );
 
 		add_filter( 'woocommerce_get_price_html', array( $this, 'filter_main_product_price_html' ), 20, 2 );
+		add_shortcode( 'pontus_preco_plano', array( $this, 'render_plan_price_shortcode' ) );
 	}
 
 	/**
@@ -152,12 +153,8 @@ final class Campaign_Links {
 	 * Loads the YITH add-on sale-price presentation.
 	 */
 	public function enqueue_campaign_assets() {
-		$coupon = $this->get_campaign_coupon();
-		if ( ! $coupon ) {
-			return;
-		}
-
-		$targets = $this->get_coupon_targets( $coupon );
+		$coupon  = $this->get_campaign_coupon();
+		$targets = $coupon ? $this->get_coupon_targets( $coupon ) : array();
 
 		wp_enqueue_style(
 			'pwt-campaign-prices',
@@ -176,7 +173,7 @@ final class Campaign_Links {
 
 		$prices = array();
 		foreach ( array( 'phone' => 50.0, 'meetings' => 350.0 ) as $target => $original ) {
-			if ( in_array( $target, $targets, true ) ) {
+			if ( $coupon && in_array( $target, $targets, true ) ) {
 				$prices[ $target ] = array(
 					'original' => $original,
 					'sale'     => $this->get_target_sale_price( $coupon, $target, $original ),
@@ -186,7 +183,7 @@ final class Campaign_Links {
 
 		$base_product  = wc_get_product( Coupon_Addons::PRODUCT_ID );
 		$base_original = $base_product instanceof \WC_Product ? (float) $base_product->get_price() : 189.0;
-		$base_sale     = in_array( 'base', $targets, true )
+		$base_sale     = $coupon && in_array( 'base', $targets, true )
 			? $this->get_target_sale_price( $coupon, 'base', $base_original )
 			: $base_original;
 
@@ -196,8 +193,8 @@ final class Campaign_Links {
 			array(
 				'currency'    => get_woocommerce_currency(),
 				'locale'      => str_replace( '_', '-', get_locale() ),
-				'mode'        => (string) $coupon->get_meta( self::META_MODE, true ),
-				'amount'      => (float) $coupon->get_meta( self::META_AMOUNT, true ),
+				'mode'        => $coupon ? (string) $coupon->get_meta( self::META_MODE, true ) : '',
+				'amount'      => $coupon ? (float) $coupon->get_meta( self::META_AMOUNT, true ) : 0,
 				'targetCount' => count( $targets ),
 				'basePrice'   => array(
 					'original' => $base_original,
@@ -205,6 +202,21 @@ final class Campaign_Links {
 				),
 				'prices'      => $prices,
 			)
+		);
+	}
+
+	/**
+	 * Renders an isolated dynamic total for Elementor.
+	 *
+	 * @return string
+	 */
+	public function render_plan_price_shortcode() {
+		$product = wc_get_product( Coupon_Addons::PRODUCT_ID );
+		$price   = $product instanceof \WC_Product ? (float) $product->get_price() : 189.0;
+
+		return sprintf(
+			'<span class="pwt-plan-price-shortcode" data-pwt-plan-price>%s</span>',
+			wp_kses_post( wc_price( $price ) )
 		);
 	}
 
