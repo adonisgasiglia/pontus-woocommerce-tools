@@ -2,7 +2,7 @@
 Contributors: adonisgasiglia
 Requires at least: 6.0
 Requires PHP: 7.4
-Stable tag: 1.2.9
+Stable tag: 1.2.10
 License: GPLv2 or later
 
 Personalizações do fluxo de contratação da Pontus Escritórios Inteligentes no WooCommerce.
@@ -25,6 +25,10 @@ Recursos atuais:
 3. Mantenha WooCommerce e YITH Product Add-ons ativos.
 
 == Changelog ==
+
+= 1.2.10 =
+* Oculta a mensagem de sucesso apenas quando a campanha aplica o cupom automaticamente.
+* Mantém inalteradas as mensagens dos cupons inseridos manualmente no checkout.
 
 = 1.2.9 =
 * Persiste o cupom promocional em cookie próprio durante a contratação.
