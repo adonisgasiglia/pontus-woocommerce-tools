@@ -175,7 +175,17 @@ final class Campaign_Links {
 			return;
 		}
 
+		$previous_success_notices = function_exists( 'wc_get_notices' )
+			? wc_get_notices( 'success' )
+			: array();
+
 		WC()->cart->apply_coupon( $code );
+
+		if ( function_exists( 'wc_get_notices' ) && function_exists( 'wc_set_notices' ) ) {
+			$notices            = wc_get_notices();
+			$notices['success'] = $previous_success_notices;
+			wc_set_notices( $notices );
+		}
 	}
 
 	/**
