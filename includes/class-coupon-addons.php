@@ -84,8 +84,8 @@ final class Coupon_Addons {
 		woocommerce_wp_checkbox(
 			array(
 				'id'          => self::META_ENABLED,
-				'label'       => __( 'Desconto em adicionais Pontus', 'pontus-woocommerce-tools' ),
-				'description' => __( 'Limita este cupom aos adicionais selecionados abaixo. O valor-base do produto não recebe desconto.', 'pontus-woocommerce-tools' ),
+				'label'       => __( 'Cupom promocional Pontus', 'pontus-woocommerce-tools' ),
+				'description' => __( 'Limita este cupom aos componentes selecionados abaixo.', 'pontus-woocommerce-tools' ),
 				'value'       => get_post_meta( $coupon_id, self::META_ENABLED, true ),
 			)
 		);
@@ -293,7 +293,7 @@ final class Coupon_Addons {
 		unset( $error_code );
 
 		if ( $this->is_addon_coupon( $coupon ) ) {
-			return __( 'Este cupom é válido apenas quando um adicional Pontus elegível está selecionado.', 'pontus-woocommerce-tools' );
+			return __( 'Este cupom é válido apenas quando um componente Pontus elegível está no carrinho.', 'pontus-woocommerce-tools' );
 		}
 
 		return $message;
