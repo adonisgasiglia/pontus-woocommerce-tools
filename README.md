@@ -7,7 +7,9 @@ Plugin WordPress que centraliza as personalizações do fluxo de contratação d
 - carregamento seguro pelo WordPress;
 - verificação da dependência do WooCommerce;
 - aviso de ativação no painel;
-- cupons restritos aos adicionais do YITH;
+- cupons restritos aos componentes da contratação;
+- links promocionais com aplicação automática de cupom;
+- preços de oferta no plano principal e nos adicionais do YITH;
 - desconto percentual, fixo ou gratuito;
 - suporte a Atendimento Telefônico e Pacote Mais Reuniões;
 - proteção do valor-base do produto contra o desconto desses cupons;
@@ -40,16 +42,33 @@ O plugin usa a branch `main` como origem das versões estáveis. Quando a versã
 1. Acesse **Marketing > Cupons** no WooCommerce.
 2. Crie ou edite um cupom.
 3. Em **Dados do cupom**, configure as opções Pontus. Quando esse modo estiver ativo, o plugin usará internamente o desconto fixo de carrinho para apresentar uma única linha no resumo.
-4. Marque **Desconto em adicionais Pontus**.
+4. Marque **Cupom promocional Pontus**.
 5. Escolha a modalidade:
    - **Percentual**: aplica a porcentagem informada ao total dos adicionais elegíveis;
    - **Valor fixo**: desconta o valor informado, limitado ao total dos adicionais;
    - **Gratuito**: desconta integralmente os adicionais elegíveis.
-6. Marque **Atendimento Telefônico**, **Pacote Mais Reuniões** ou ambos.
+6. Marque **Plano principal**, **Atendimento Telefônico**, **Pacote Mais Reuniões** ou uma combinação.
 7. Configure normalmente validade, limite de usos e demais restrições nativas do WooCommerce.
 8. Salve o cupom.
 
-O cupom somente será aceito quando o carrinho contiver pelo menos um adicional marcado como elegível.
+O cupom somente será aceito quando o carrinho contiver pelo menos um componente marcado como elegível.
+
+## Links promocionais
+
+Depois de salvar o cupom, acrescente o parâmetro `pwt_coupon` ao endereço da página do produto:
+
+```text
+https://seusite.com/pagina-do-produto/?pwt_coupon=CODIGO
+```
+
+Ao acessar esse endereço, o plugin:
+
+1. guarda o cupom da campanha na sessão do visitante;
+2. apresenta o preço original riscado e o promocional destacado;
+3. aplica o cupom automaticamente depois que o produto entra no carrinho;
+4. mantém validade, limites de uso e demais restrições do WooCommerce.
+
+Para campanhas de valor fixo, recomenda-se selecionar apenas um componente por cupom. Isso mantém a comunicação visual do preço idêntica ao desconto final.
 
 ## Cálculo
 
