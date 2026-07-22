@@ -45,6 +45,8 @@
 		meetings: '#yith-wapo-option-1-1'
 	};
 
+	const autoSelectedTargets = new Set();
+
 	const formatter = new Intl.NumberFormat(
 		window.pwtCampaignPrices.locale || 'pt-BR',
 		{
@@ -194,12 +196,12 @@
 				Number( configured.sale ) >= Number( configured.original ) ||
 				! option ||
 				option.input.disabled ||
-				option.input.dataset.pwtCampaignAutoSelected === '1'
+				autoSelectedTargets.has( target )
 			) {
 				return;
 			}
 
-			option.input.dataset.pwtCampaignAutoSelected = '1';
+			autoSelectedTargets.add( target );
 
 			if ( option.input.checked ) {
 				return;
