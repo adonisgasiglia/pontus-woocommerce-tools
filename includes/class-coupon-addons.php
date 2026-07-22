@@ -389,10 +389,13 @@ final class Coupon_Addons {
 
 			if ( $this->looks_like_option_record( $option ) ) {
 				$records[] = $option;
-				continue;
 			}
 
-			$records = array_merge( $records, $this->flatten_option_records( $option ) );
+			foreach ( $option as $nested_value ) {
+				if ( is_array( $nested_value ) ) {
+					$records = array_merge( $records, $this->flatten_option_records( $nested_value ) );
+				}
+			}
 		}
 
 		return $records;
