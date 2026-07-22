@@ -188,9 +188,12 @@ final class Campaign_Links {
 			'pwt-campaign-prices',
 			'pwtCampaignPrices',
 			array(
-				'currency' => get_woocommerce_currency(),
-				'locale'   => str_replace( '_', '-', get_locale() ),
-				'prices'   => $prices,
+				'currency'    => get_woocommerce_currency(),
+				'locale'      => str_replace( '_', '-', get_locale() ),
+				'mode'        => (string) $coupon->get_meta( self::META_MODE, true ),
+				'amount'      => (float) $coupon->get_meta( self::META_AMOUNT, true ),
+				'targetCount' => count( $targets ),
+				'prices'      => $prices,
 			)
 		);
 	}
