@@ -53,6 +53,10 @@ final class Campaign_Links {
 		add_action( 'wp_loaded', array( $this, 'capture_campaign' ), 25 );
 		add_action( 'template_redirect', array( $this, 'apply_on_cart_or_checkout' ), 5 );
 		add_action( 'woocommerce_add_to_cart', array( $this, 'apply_pending_coupon' ), 25 );
+		add_action( 'woocommerce_cart_loaded_from_session', array( $this, 'apply_pending_coupon' ), 30 );
+		add_action( 'woocommerce_before_cart', array( $this, 'apply_pending_coupon' ), 5 );
+		add_action( 'woocommerce_before_checkout_form', array( $this, 'apply_pending_coupon' ), 5 );
+		add_action( 'woocommerce_checkout_init', array( $this, 'apply_pending_coupon' ), 5 );
 		add_action( 'woocommerce_removed_coupon', array( $this, 'clear_removed_campaign' ) );
 		add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_campaign_assets' ) );
 
@@ -103,7 +107,50 @@ final class Campaign_Links {
 			return;
 		}
 
+		$coupon = new \WC_Coupon( $code );
+		if ( ! $this->is_campaign_coupon( $coupon ) || ! $this->cart_contains_campaign_target( $coupon ) ) {
+			return;
+		}
+
 		WC()->cart->apply_coupon( $code );
+	}
+
+	/**
+	 * Checks whether the cart already contains a target of the campaign.
+	 *
+	 * @param WC_Coupon $coupon Coupon object.
+	 * @return bool
+	 */
+	private function cart_contains_campaign_target( $coupon ) {
+		$targets = $this->get_coupon_targets( $coupon );
+
+		foreach ( WC()->cart->get_cart() as $cart_item ) {
+			$product_id = isset( $cart_item['product_id'] ) ? (int) $cart_item['product_id'] : 0;
+
+			if ( in_array( 'base', $targets, true ) && Coupon_Addons::PRODUCT_ID === $product_id ) {
+				return true;
+			}
+
+			$options = isset( $cart_item['yith_wapo_options'] ) && is_array( $cart_item['yith_wapo_options'] )
+				? $cart_item['yith_wapo_options']
+				: array();
+
+			foreach ( $options as $option_group ) {
+				if ( ! is_array( $option_group ) ) {
+					continue;
+				}
+
+				if ( in_array( 'phone', $targets, true ) && isset( $option_group['1-0'] ) ) {
+					return true;
+				}
+
+				if ( in_array( 'meetings', $targets, true ) && isset( $option_group['1-1'] ) ) {
+					return true;
+				}
+			}
+		}
+
+		return false;
 	}
 
 	/**
