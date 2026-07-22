@@ -2,7 +2,7 @@
 Contributors: adonisgasiglia
 Requires at least: 6.0
 Requires PHP: 7.4
-Stable tag: 1.2.2
+Stable tag: 1.2.3
 License: GPLv2 or later
 
 Personalizações do fluxo de contratação da Pontus Escritórios Inteligentes no WooCommerce.
@@ -25,6 +25,10 @@ Recursos atuais:
 3. Mantenha WooCommerce e YITH Product Add-ons ativos.
 
 == Changelog ==
+
+= 1.2.3 =
+* Adiciona o shortcode [pontus_preco_plano] para o total dinâmico.
+* Usa o azul da Pontus nos preços promocionais.
 
 = 1.2.2 =
 * Usa o preço-base estável do adicional no total do Elementor.
