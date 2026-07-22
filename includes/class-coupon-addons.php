@@ -62,11 +62,12 @@ final class Coupon_Addons {
 		add_action( 'woocommerce_coupon_options', array( $this, 'render_coupon_options' ) );
 		add_action( 'woocommerce_coupon_options_save', array( $this, 'save_coupon_options' ), 10, 2 );
 
-		add_filter( 'woocommerce_coupon_get_amount', array( $this, 'zero_native_coupon_amount' ), 10, 2 );
+		add_filter( 'woocommerce_coupon_get_amount', array( $this, 'get_native_coupon_amount' ), 10, 2 );
+		add_filter( 'woocommerce_coupon_get_discount_type', array( $this, 'force_fixed_cart_discount_type' ), 10, 2 );
+		add_filter( 'woocommerce_cart_totals_coupon_label', array( $this, 'filter_coupon_label' ), 10, 2 );
 		add_filter( 'woocommerce_coupon_is_valid', array( $this, 'validate_coupon' ), 10, 3 );
 		add_filter( 'woocommerce_coupon_error', array( $this, 'filter_coupon_error' ), 10, 3 );
 
-		add_action( 'woocommerce_cart_calculate_fees', array( $this, 'apply_addon_discounts' ), 30 );
 	}
 
 	/**
@@ -169,24 +170,75 @@ final class Coupon_Addons {
 		update_post_meta( $coupon_id, self::META_MEETINGS, $meetings );
 
 		if ( 'yes' === $enabled && $coupon instanceof \WC_Coupon ) {
+			$coupon->set_discount_type( 'fixed_cart' );
 			$coupon->set_amount( 0 );
 			$coupon->save();
 		}
 	}
 
 	/**
-	 * Prevents WooCommerce from discounting the complete product line.
+	 * Returns the discount amount calculated only over eligible add-ons.
 	 *
 	 * @param float     $amount Coupon amount.
 	 * @param WC_Coupon $coupon Coupon object.
 	 * @return float
 	 */
-	public function zero_native_coupon_amount( $amount, $coupon ) {
-		if ( $this->is_addon_coupon( $coupon ) ) {
-			return 0.0;
+	public function get_native_coupon_amount( $amount, $coupon ) {
+		if ( ! $this->is_addon_coupon( $coupon ) ) {
+			return $amount;
 		}
 
-		return $amount;
+		$eligible = $this->get_coupon_addons( $coupon );
+		$base     = $this->sum_selected_addons( $this->get_cart_addon_totals(), $eligible );
+
+		return $this->calculate_discount( $coupon, $base );
+	}
+
+	/**
+	 * Forces Pontus coupons to use the native fixed-cart presentation.
+	 *
+	 * @param string    $discount_type Current discount type.
+	 * @param WC_Coupon $coupon        Coupon object.
+	 * @return string
+	 */
+	public function force_fixed_cart_discount_type( $discount_type, $coupon ) {
+		if ( $this->is_addon_coupon( $coupon ) ) {
+			return 'fixed_cart';
+		}
+
+		return $discount_type;
+	}
+
+	/**
+	 * Identifies the discounted add-ons in the native coupon label.
+	 *
+	 * @param string    $label  Current coupon label.
+	 * @param WC_Coupon $coupon Coupon object.
+	 * @return string
+	 */
+	public function filter_coupon_label( $label, $coupon ) {
+		if ( ! $this->is_addon_coupon( $coupon ) ) {
+			return $label;
+		}
+
+		$addon_labels = array(
+			'phone'    => __( 'Atendimento Telefônico', 'pontus-woocommerce-tools' ),
+			'meetings' => __( 'Pacote Mais Reuniões', 'pontus-woocommerce-tools' ),
+		);
+
+		$selected_labels = array();
+		foreach ( $this->get_coupon_addons( $coupon ) as $addon_key ) {
+			if ( isset( $addon_labels[ $addon_key ] ) ) {
+				$selected_labels[] = $addon_labels[ $addon_key ];
+			}
+		}
+
+		return sprintf(
+			/* translators: 1: coupon code, 2: eligible add-on names. */
+			__( 'Cupom %1$s: %2$s', 'pontus-woocommerce-tools' ),
+			$coupon->get_code(),
+			implode( ' + ', $selected_labels )
+		);
 	}
 
 	/**
@@ -230,57 +282,6 @@ final class Coupon_Addons {
 		}
 
 		return $message;
-	}
-
-	/**
-	 * Adds negative fees representing each applied Pontus coupon.
-	 *
-	 * @param WC_Cart $cart Cart object.
-	 */
-	public function apply_addon_discounts( $cart ) {
-		if ( is_admin() && ! wp_doing_ajax() ) {
-			return;
-		}
-
-		$remaining = $this->get_cart_addon_totals();
-
-		if ( empty( array_filter( $remaining ) ) ) {
-			return;
-		}
-
-		foreach ( $cart->get_applied_coupons() as $coupon_code ) {
-			$coupon = new \WC_Coupon( $coupon_code );
-
-			if ( ! $this->is_addon_coupon( $coupon ) ) {
-				continue;
-			}
-
-			$eligible = $this->get_coupon_addons( $coupon );
-			$base     = $this->sum_selected_addons( $remaining, $eligible );
-
-			if ( $base <= 0 ) {
-				continue;
-			}
-
-			$discount = $this->calculate_discount( $coupon, $base );
-			if ( $discount <= 0 ) {
-				continue;
-			}
-
-			$discount = min( $discount, $base );
-
-			$cart->add_fee(
-				sprintf(
-					/* translators: %s: coupon code. */
-					__( 'Cupom %s: adicionais', 'pontus-woocommerce-tools' ),
-					wc_format_coupon_code( $coupon_code )
-				),
-				-1 * $discount,
-				false
-			);
-
-			$this->consume_discount( $remaining, $eligible, $discount, $base );
-		}
 	}
 
 	/**
@@ -521,22 +522,4 @@ final class Coupon_Addons {
 		return $total;
 	}
 
-	/**
-	 * Consumes the discounted portion so stacked coupons cannot exceed the add-on total.
-	 *
-	 * @param array<string, float> $remaining Remaining totals by add-on.
-	 * @param string[]             $eligible  Eligible add-on keys.
-	 * @param float                $discount  Discount applied.
-	 * @param float                $base      Eligible base before this coupon.
-	 */
-	private function consume_discount( &$remaining, $eligible, $discount, $base ) {
-		foreach ( $eligible as $addon_key ) {
-			if ( empty( $remaining[ $addon_key ] ) ) {
-				continue;
-			}
-
-			$share = $remaining[ $addon_key ] / $base;
-			$remaining[ $addon_key ] = max( 0, $remaining[ $addon_key ] - ( $discount * $share ) );
-		}
-	}
 }
