@@ -20,6 +20,7 @@ final class Coupon_Addons {
 	 * Coupon meta keys.
 	 */
 	private const META_ENABLED  = '_pwt_addon_coupon_enabled';
+	private const META_BASE     = '_pwt_addon_coupon_base';
 	private const META_MODE     = '_pwt_addon_coupon_mode';
 	private const META_AMOUNT   = '_pwt_addon_coupon_amount';
 	private const META_PHONE    = '_pwt_addon_coupon_phone';
@@ -30,6 +31,8 @@ final class Coupon_Addons {
 	 *
 	 * @var array<string, float>
 	 */
+	public const PRODUCT_ID = 19;
+
 	private const ADDON_FALLBACK_PRICES = array(
 		'phone'    => 50.0,
 		'meetings' => 350.0,
@@ -81,8 +84,8 @@ final class Coupon_Addons {
 		woocommerce_wp_checkbox(
 			array(
 				'id'          => self::META_ENABLED,
-				'label'       => __( 'Desconto em adicionais Pontus', 'pontus-woocommerce-tools' ),
-				'description' => __( 'Limita este cupom aos adicionais selecionados abaixo. O valor-base do produto não recebe desconto.', 'pontus-woocommerce-tools' ),
+				'label'       => __( 'Cupom promocional Pontus', 'pontus-woocommerce-tools' ),
+				'description' => __( 'Limita este cupom aos componentes selecionados abaixo.', 'pontus-woocommerce-tools' ),
 				'value'       => get_post_meta( $coupon_id, self::META_ENABLED, true ),
 			)
 		);
@@ -119,6 +122,15 @@ final class Coupon_Addons {
 
 		woocommerce_wp_checkbox(
 			array(
+				'id'          => self::META_BASE,
+				'label'       => __( 'Plano principal', 'pontus-woocommerce-tools' ),
+				'description' => __( 'Aplica o desconto ao valor-base do Escritório Inteligente.', 'pontus-woocommerce-tools' ),
+				'value'       => get_post_meta( $coupon_id, self::META_BASE, true ),
+			)
+		);
+
+		woocommerce_wp_checkbox(
+			array(
 				'id'    => self::META_PHONE,
 				'label' => __( 'Atendimento Telefônico', 'pontus-woocommerce-tools' ),
 				'value' => get_post_meta( $coupon_id, self::META_PHONE, true ),
@@ -148,6 +160,7 @@ final class Coupon_Addons {
 		}
 
 		$enabled  = isset( $_POST[ self::META_ENABLED ] ) ? 'yes' : 'no';
+		$base     = isset( $_POST[ self::META_BASE ] ) ? 'yes' : 'no';
 		$phone    = isset( $_POST[ self::META_PHONE ] ) ? 'yes' : 'no';
 		$meetings = isset( $_POST[ self::META_MEETINGS ] ) ? 'yes' : 'no';
 
@@ -164,6 +177,7 @@ final class Coupon_Addons {
 			: '0';
 
 		update_post_meta( $coupon_id, self::META_ENABLED, $enabled );
+		update_post_meta( $coupon_id, self::META_BASE, $base );
 		update_post_meta( $coupon_id, self::META_MODE, $mode );
 		update_post_meta( $coupon_id, self::META_AMOUNT, max( 0, (float) $amount ) );
 		update_post_meta( $coupon_id, self::META_PHONE, $phone );
@@ -188,8 +202,8 @@ final class Coupon_Addons {
 			return $amount;
 		}
 
-		$eligible = $this->get_coupon_addons( $coupon );
-		$base     = $this->sum_selected_addons( $this->get_cart_addon_totals(), $eligible );
+		$eligible = $this->get_coupon_targets( $coupon );
+		$base     = $this->sum_selected_targets( $this->get_cart_target_totals(), $eligible );
 
 		return $this->calculate_discount( $coupon, $base );
 	}
@@ -222,12 +236,13 @@ final class Coupon_Addons {
 		}
 
 		$addon_labels = array(
+			'base'     => __( 'Escritório Inteligente', 'pontus-woocommerce-tools' ),
 			'phone'    => __( 'Atendimento Telefônico', 'pontus-woocommerce-tools' ),
 			'meetings' => __( 'Pacote Mais Reuniões', 'pontus-woocommerce-tools' ),
 		);
 
 		$selected_labels = array();
-		foreach ( $this->get_coupon_addons( $coupon ) as $addon_key ) {
+		foreach ( $this->get_coupon_targets( $coupon ) as $addon_key ) {
 			if ( isset( $addon_labels[ $addon_key ] ) ) {
 				$selected_labels[] = $addon_labels[ $addon_key ];
 			}
@@ -256,14 +271,14 @@ final class Coupon_Addons {
 			return $valid;
 		}
 
-		$eligible = $this->get_coupon_addons( $coupon );
+		$eligible = $this->get_coupon_targets( $coupon );
 		if ( empty( $eligible ) ) {
 			return false;
 		}
 
-		$totals = $this->get_cart_addon_totals();
+		$totals = $this->get_cart_target_totals();
 
-		return 0 < $this->sum_selected_addons( $totals, $eligible );
+		return 0 < $this->sum_selected_targets( $totals, $eligible );
 	}
 
 	/**
@@ -278,7 +293,7 @@ final class Coupon_Addons {
 		unset( $error_code );
 
 		if ( $this->is_addon_coupon( $coupon ) ) {
-			return __( 'Este cupom é válido apenas quando um adicional Pontus elegível está selecionado.', 'pontus-woocommerce-tools' );
+			return __( 'Este cupom é válido apenas quando um componente Pontus elegível está no carrinho.', 'pontus-woocommerce-tools' );
 		}
 
 		return $message;
@@ -323,8 +338,12 @@ final class Coupon_Addons {
 	 * @param WC_Coupon $coupon Coupon object.
 	 * @return string[]
 	 */
-	private function get_coupon_addons( $coupon ) {
+	private function get_coupon_targets( $coupon ) {
 		$addons = array();
+
+		if ( 'yes' === $coupon->get_meta( self::META_BASE, true ) ) {
+			$addons[] = 'base';
+		}
 
 		if ( 'yes' === $coupon->get_meta( self::META_PHONE, true ) ) {
 			$addons[] = 'phone';
@@ -342,8 +361,9 @@ final class Coupon_Addons {
 	 *
 	 * @return array<string, float>
 	 */
-	private function get_cart_addon_totals() {
+	private function get_cart_target_totals() {
 		$totals = array(
+			'base'     => 0.0,
 			'phone'    => 0.0,
 			'meetings' => 0.0,
 		);
@@ -353,11 +373,24 @@ final class Coupon_Addons {
 		}
 
 		foreach ( WC()->cart->get_cart() as $cart_item ) {
+			$quantity   = isset( $cart_item['quantity'] ) ? max( 1, (int) $cart_item['quantity'] ) : 1;
+			$product_id = isset( $cart_item['product_id'] ) ? (int) $cart_item['product_id'] : 0;
+
+			if ( self::PRODUCT_ID === $product_id ) {
+				$base_price = isset( $cart_item['yith_wapo_item_price'] )
+					? (float) wc_format_decimal( $cart_item['yith_wapo_item_price'] )
+					: 0.0;
+
+				if ( $base_price <= 0 && isset( $cart_item['data'] ) && $cart_item['data'] instanceof \WC_Product ) {
+					$base_price = (float) $cart_item['data']->get_price();
+				}
+
+				$totals['base'] += $base_price * $quantity;
+			}
+
 			if ( empty( $cart_item['yith_wapo_options'] ) || ! is_array( $cart_item['yith_wapo_options'] ) ) {
 				continue;
 			}
-
-			$quantity = isset( $cart_item['quantity'] ) ? max( 1, (int) $cart_item['quantity'] ) : 1;
 
 			foreach ( $this->flatten_option_records( $cart_item['yith_wapo_options'] ) as $option ) {
 				$addon_key = $this->identify_addon( $option );
@@ -512,7 +545,7 @@ final class Coupon_Addons {
 	 * @param string[]             $eligible Eligible add-on keys.
 	 * @return float
 	 */
-	private function sum_selected_addons( $totals, $eligible ) {
+	private function sum_selected_targets( $totals, $eligible ) {
 		$total = 0.0;
 
 		foreach ( $eligible as $addon_key ) {
