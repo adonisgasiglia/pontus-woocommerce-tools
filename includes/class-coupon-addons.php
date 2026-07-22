@@ -271,14 +271,29 @@ final class Coupon_Addons {
 			return $valid;
 		}
 
+		return $this->cart_has_eligible_target( $coupon );
+	}
+
+	/**
+	 * Checks whether the cart contains a component targeted by the coupon.
+	 *
+	 * This is the shared eligibility source for manual validation and
+	 * automatic campaign application, including compact YITH option data.
+	 *
+	 * @param WC_Coupon $coupon Coupon object.
+	 * @return bool
+	 */
+	public function cart_has_eligible_target( $coupon ) {
+		if ( ! $this->is_addon_coupon( $coupon ) ) {
+			return false;
+		}
+
 		$eligible = $this->get_coupon_targets( $coupon );
 		if ( empty( $eligible ) ) {
 			return false;
 		}
 
-		$totals = $this->get_cart_target_totals();
-
-		return 0 < $this->sum_selected_targets( $totals, $eligible );
+		return 0 < $this->sum_selected_targets( $this->get_cart_target_totals(), $eligible );
 	}
 
 	/**
