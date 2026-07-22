@@ -53,6 +53,10 @@ final class Campaign_Links {
 		add_action( 'wp_loaded', array( $this, 'capture_campaign' ), 25 );
 		add_action( 'template_redirect', array( $this, 'apply_on_cart_or_checkout' ), 5 );
 		add_action( 'woocommerce_add_to_cart', array( $this, 'apply_pending_coupon' ), 25 );
+		add_action( 'woocommerce_cart_loaded_from_session', array( $this, 'apply_pending_coupon' ), 30 );
+		add_action( 'woocommerce_before_cart', array( $this, 'apply_pending_coupon' ), 5 );
+		add_action( 'woocommerce_before_checkout_form', array( $this, 'apply_pending_coupon' ), 5 );
+		add_action( 'woocommerce_checkout_init', array( $this, 'apply_pending_coupon' ), 5 );
 		add_action( 'woocommerce_removed_coupon', array( $this, 'clear_removed_campaign' ) );
 		add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_campaign_assets' ) );
 
