@@ -2,7 +2,7 @@
 Contributors: adonisgasiglia
 Requires at least: 6.0
 Requires PHP: 7.4
-Stable tag: 1.2.12
+Stable tag: 1.2.13
 License: GPLv2 or later
 
 Personalizações do fluxo de contratação da Pontus Escritórios Inteligentes no WooCommerce.
@@ -25,6 +25,10 @@ Recursos atuais:
 3. Mantenha WooCommerce e YITH Product Add-ons ativos.
 
 == Changelog ==
+
+= 1.2.13 =
+* Impede que o YITH selecione novamente um adicional após a primeira tentativa de desmarcação.
+* Mantém o estado da seleção automática mesmo quando o campo é recriado no HTML.
 
 = 1.2.12 =
 * Pré-seleciona no personalizador os adicionais que recebem desconto da campanha.
