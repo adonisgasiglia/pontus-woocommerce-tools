@@ -2,7 +2,7 @@
 Contributors: adonisgasiglia
 Requires at least: 6.0
 Requires PHP: 7.4
-Stable tag: 1.2.7
+Stable tag: 1.2.8
 License: GPLv2 or later
 
 Personalizações do fluxo de contratação da Pontus Escritórios Inteligentes no WooCommerce.
@@ -25,6 +25,10 @@ Recursos atuais:
 3. Mantenha WooCommerce e YITH Product Add-ons ativos.
 
 == Changelog ==
+
+= 1.2.8 =
+* Envia o formulário de contratação diretamente ao checkout com o cupom dinâmico na URL.
+* Evita que redirecionamentos do Elementor ou YITH descartem o parâmetro da campanha.
 
 = 1.2.7 =
 * Inclui o código da campanha diretamente na URL de redirecionamento para o checkout.
