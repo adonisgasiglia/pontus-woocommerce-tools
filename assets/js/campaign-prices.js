@@ -184,7 +184,39 @@
 		} );
 	}
 
+	function preselectCampaignOptions() {
+		Object.keys( window.pwtCampaignPrices.prices ).forEach( function ( target ) {
+			const configured = window.pwtCampaignPrices.prices[ target ];
+			const option = getOptionData( target );
+
+			if (
+				! configured ||
+				Number( configured.sale ) >= Number( configured.original ) ||
+				! option ||
+				option.input.disabled ||
+				option.input.dataset.pwtCampaignAutoSelected === '1'
+			) {
+				return;
+			}
+
+			option.input.dataset.pwtCampaignAutoSelected = '1';
+
+			if ( option.input.checked ) {
+				return;
+			}
+
+			option.input.click();
+
+			if ( ! option.input.checked ) {
+				option.input.checked = true;
+				option.input.dispatchEvent( new Event( 'input', { bubbles: true } ) );
+				option.input.dispatchEvent( new Event( 'change', { bubbles: true } ) );
+			}
+		} );
+	}
+
 	function renderCampaignPrices() {
+		preselectCampaignOptions();
 		Object.keys( window.pwtCampaignPrices.prices ).forEach( renderOptionPrice );
 		renderSummaryPrice();
 	}
