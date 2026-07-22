@@ -70,7 +70,10 @@ final class Plugin {
 		}
 
 		require_once PWT_PLUGIN_PATH . 'includes/class-coupon-addons.php';
+		require_once PWT_PLUGIN_PATH . 'includes/class-campaign-links.php';
+
 		Coupon_Addons::instance();
+		Campaign_Links::instance();
 
 		/**
 		 * Fires when Pontus WooCommerce Tools is ready.
