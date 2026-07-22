@@ -20,6 +20,14 @@ Plugin WordPress que centraliza as personalizações do fluxo de contratação d
 - YITH WooCommerce Product Add-ons & Extra Options;
 - PHP 7.4 ou superior.
 
+## Atualizações pelo WordPress
+
+A partir da versão 1.1.1, o plugin pode ser atualizado pelo painel do WordPress com o Git Updater.
+
+Como o repositório é privado, configure no Git Updater um token fine-grained do GitHub limitado a este repositório, com as permissões **Contents: Read-only** e **Metadata: Read-only**.
+
+O plugin usa a branch `main` como origem das versões estáveis. Quando a versão do cabeçalho remoto for superior à instalada, o WordPress exibirá a atualização disponível.
+
 ## Instalação
 
 1. Baixe o repositório como arquivo ZIP.
