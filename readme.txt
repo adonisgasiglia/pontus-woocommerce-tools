@@ -2,7 +2,7 @@
 Contributors: adonisgasiglia
 Requires at least: 6.0
 Requires PHP: 7.4
-Stable tag: 1.2.0
+Stable tag: 1.2.1
 License: GPLv2 or later
 
 Personalizações do fluxo de contratação da Pontus Escritórios Inteligentes no WooCommerce.
@@ -25,6 +25,10 @@ Recursos atuais:
 3. Mantenha WooCommerce e YITH Product Add-ons ativos.
 
 == Changelog ==
+
+= 1.2.1 =
+* Atualiza o total escolhido no widget de preço do Elementor.
+* Melhora o contraste dos preços promocionais nos adicionais do YITH.
 
 = 1.2.0 =
 * Adiciona links promocionais com aplicação automática de cupom.
