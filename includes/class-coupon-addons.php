@@ -387,6 +387,16 @@ final class Coupon_Addons {
 				continue;
 			}
 
+			foreach ( $option as $option_key => $option_value ) {
+				if ( is_scalar( $option_value ) && preg_match( '/^(\\d+)-(\\d+)$/', (string) $option_key, $matches ) ) {
+					$records[] = array(
+						'addon_id'  => $matches[1],
+						'option_id' => (string) $option_key,
+						'value'     => (string) $option_value,
+					);
+				}
+			}
+
 			if ( $this->looks_like_option_record( $option ) ) {
 				$records[] = $option;
 			}
