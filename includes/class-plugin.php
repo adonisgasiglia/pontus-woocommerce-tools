@@ -69,6 +69,9 @@ final class Plugin {
 			return;
 		}
 
+		require_once PWT_PLUGIN_PATH . 'includes/class-coupon-addons.php';
+		Coupon_Addons::instance();
+
 		/**
 		 * Fires when Pontus WooCommerce Tools is ready.
 		 *
