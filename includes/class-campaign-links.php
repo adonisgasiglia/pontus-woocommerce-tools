@@ -215,8 +215,9 @@ final class Campaign_Links {
 		$price   = $product instanceof \WC_Product ? (float) $product->get_price() : 189.0;
 
 		return sprintf(
-			'<span class="pwt-plan-price-shortcode" data-pwt-plan-price>%s</span>',
-			wp_kses_post( wc_price( $price ) )
+			'<span class="pwt-plan-price-shortcode" data-pwt-plan-price>%1$s<span class="pwt-plan-price-period">%2$s</span></span>',
+			wp_kses_post( wc_price( $price ) ),
+			esc_html__( '/mês', 'pontus-woocommerce-tools' )
 		);
 	}
 
