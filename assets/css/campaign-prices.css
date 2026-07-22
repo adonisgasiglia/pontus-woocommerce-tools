@@ -5,16 +5,39 @@
 }
 
 .pwt-campaign-option-price del {
-	color: #64748b;
-	opacity: 0.8;
+	color: rgba(255, 255, 255, 0.78);
+	text-decoration-color: rgba(255, 255, 255, 0.9);
+	text-decoration-thickness: 1px;
 }
 
 .pwt-campaign-option-price ins {
-	color: #17384d;
+	color: #fff;
 	font-weight: 700;
 	text-decoration: none;
 }
 
+.pwt-campaign-option-price .sign {
+	color: inherit;
+}
+
 .pwt-campaign-option-price ins .sign {
 	margin-right: 0.1em;
+}
+
+.pwt-campaign-summary-price {
+	display: inline-flex;
+	align-items: baseline;
+	gap: 0.45em;
+}
+
+.pwt-campaign-summary-price del {
+	color: #64748b;
+	font-size: 0.82em;
+	font-weight: 500;
+}
+
+.pwt-campaign-summary-price ins {
+	color: #17384d;
+	font-weight: 700;
+	text-decoration: none;
 }

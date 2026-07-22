@@ -42,29 +42,45 @@
 		return Math.max( 0, original * ratio );
 	}
 
-	function renderOptionPrice( target ) {
+	function getOptionData( target ) {
 		const wrapper = document.querySelector( selectors[ target ] );
 
 		if ( ! wrapper ) {
-			return;
+			return null;
 		}
 
 		const input = wrapper.querySelector( '.yith-wapo-option-value' );
-		const priceElement = wrapper.querySelector( '.option-price' );
+		if ( ! input ) {
+			return null;
+		}
+
+		const configured = window.pwtCampaignPrices.prices[ target ];
+		const dataPrice = Number.parseFloat( input.dataset.price );
+		const fallback = configured ? Number( configured.original ) : 0;
+		const original = Number.isFinite( dataPrice ) && dataPrice > 0 ? dataPrice : fallback;
+
+		return {
+			wrapper,
+			input,
+			original,
+			sale: getSalePrice( target, original )
+		};
+	}
+
+	function renderOptionPrice( target ) {
+		const option = getOptionData( target );
 		const configured = window.pwtCampaignPrices.prices[ target ];
 
-		if ( ! input || ! priceElement || ! configured ) {
+		if ( ! option || ! configured ) {
 			return;
 		}
 
-		const dataPrice = Number.parseFloat( input.dataset.price );
-		const original = Number.isFinite( dataPrice ) && dataPrice > 0
-			? dataPrice
-			: Number( configured.original );
+		const priceElement = option.wrapper.querySelector( '.option-price' );
+		if ( ! priceElement ) {
+			return;
+		}
 
-		const sale = getSalePrice( target, original );
-		const signature = original.toFixed( 4 ) + ':' + sale.toFixed( 4 );
-
+		const signature = option.original.toFixed( 4 ) + ':' + option.sale.toFixed( 4 );
 		if ( priceElement.dataset.pwtCampaignSignature === signature ) {
 			return;
 		}
@@ -73,16 +89,69 @@
 		priceElement.classList.add( 'pwt-campaign-option-price' );
 		priceElement.innerHTML =
 			'<span class="brackets">(</span>' +
-			'<del><span class="sign positive">+</span>' + formatter.format( original ) + '</del>' +
-			'<ins><span class="sign positive">+</span>' + formatter.format( sale ) + '</ins>' +
+			'<del>' + formatter.format( option.original ) + '</del>' +
+			'<ins><span class="sign positive">+</span>' + formatter.format( option.sale ) + '</ins>' +
 			'<span class="brackets">)</span>';
+	}
+
+	function renderSummaryPrice() {
+		const priceElements = document.querySelectorAll(
+			'.elementor-element-3a531f9 .price, [data-id="3a531f9"] .price'
+		);
+
+		if ( ! priceElements.length || ! window.pwtCampaignPrices.basePrice ) {
+			return;
+		}
+
+		let originalTotal = Number( window.pwtCampaignPrices.basePrice.original ) || 0;
+		let saleTotal = Number( window.pwtCampaignPrices.basePrice.sale );
+		if ( ! Number.isFinite( saleTotal ) ) {
+			saleTotal = originalTotal;
+		}
+
+		Object.keys( selectors ).forEach( function ( target ) {
+			const option = getOptionData( target );
+
+			if ( option && option.input.checked ) {
+				originalTotal += option.original;
+				saleTotal += option.sale;
+			}
+		} );
+
+		const signature = originalTotal.toFixed( 4 ) + ':' + saleTotal.toFixed( 4 );
+
+		priceElements.forEach( function ( priceElement ) {
+			if ( priceElement.dataset.pwtCampaignSignature === signature ) {
+				return;
+			}
+
+			priceElement.dataset.pwtCampaignSignature = signature;
+			priceElement.classList.add( 'pwt-campaign-summary-price' );
+
+			if ( saleTotal < originalTotal ) {
+				priceElement.innerHTML =
+					'<del>' + formatter.format( originalTotal ) + '</del>' +
+					'<ins>' + formatter.format( saleTotal ) + '</ins>';
+			} else {
+				priceElement.innerHTML =
+					'<span class="woocommerce-Price-amount amount"><bdi>' +
+					formatter.format( saleTotal ) +
+					'</bdi></span>';
+			}
+		} );
 	}
 
 	function renderCampaignPrices() {
 		Object.keys( window.pwtCampaignPrices.prices ).forEach( renderOptionPrice );
+		renderSummaryPrice();
 	}
 
 	document.addEventListener( 'DOMContentLoaded', renderCampaignPrices );
+	document.addEventListener( 'change', function ( event ) {
+		if ( event.target.matches( '.yith-wapo-option-value' ) ) {
+			renderCampaignPrices();
+		}
+	} );
 	window.addEventListener( 'load', renderCampaignPrices );
 
 	const observer = new MutationObserver( renderCampaignPrices );
