@@ -18,6 +18,7 @@ final class Campaign_Links {
 
 	private const QUERY_ARG   = 'pwt_coupon';
 	private const SESSION_KEY = 'pwt_campaign_coupon';
+	private const COOKIE_KEY  = 'pwt_campaign_coupon';
 
 	private const META_ENABLED  = '_pwt_addon_coupon_enabled';
 	private const META_BASE     = '_pwt_addon_coupon_base';
@@ -74,17 +75,26 @@ final class Campaign_Links {
 			return;
 		}
 
-		if ( isset( $_GET[ self::QUERY_ARG ] ) ) {
-			$code   = wc_format_coupon_code( wp_unslash( $_GET[ self::QUERY_ARG ] ) );
-			$coupon = new \WC_Coupon( $code );
+		$from_query = isset( $_GET[ self::QUERY_ARG ] );
+		$raw_code   = $from_query
+			? wp_unslash( $_GET[ self::QUERY_ARG ] )
+			: ( isset( $_COOKIE[ self::COOKIE_KEY ] ) ? wp_unslash( $_COOKIE[ self::COOKIE_KEY ] ) : '' );
+		$code       = wc_format_coupon_code( $raw_code );
 
-			if ( $this->is_campaign_coupon( $coupon ) ) {
-				WC()->session->set( self::SESSION_KEY, $coupon->get_code() );
-			} else {
-				WC()->session->__unset( self::SESSION_KEY );
-			}
+		if ( '' === $code ) {
+			return;
 		}
 
+		$coupon = new \WC_Coupon( $code );
+
+		if ( $this->is_campaign_coupon( $coupon ) ) {
+			WC()->session->set( self::SESSION_KEY, $coupon->get_code() );
+			wc_setcookie( self::COOKIE_KEY, $coupon->get_code(), time() + DAY_IN_SECONDS );
+			return;
+		}
+
+		WC()->session->__unset( self::SESSION_KEY );
+		wc_setcookie( self::COOKIE_KEY, '', time() - HOUR_IN_SECONDS );
 	}
 
 	/**
@@ -191,6 +201,7 @@ final class Campaign_Links {
 		$campaign_code = (string) WC()->session->get( self::SESSION_KEY );
 		if ( wc_format_coupon_code( $coupon_code ) === wc_format_coupon_code( $campaign_code ) ) {
 			WC()->session->__unset( self::SESSION_KEY );
+			wc_setcookie( self::COOKIE_KEY, '', time() - HOUR_IN_SECONDS );
 		}
 	}
 
@@ -266,6 +277,9 @@ final class Campaign_Links {
 				'currency'    => get_woocommerce_currency(),
 				'locale'      => str_replace( '_', '-', get_locale() ),
 				'period'      => __( '/mês', 'pontus-woocommerce-tools' ),
+				'couponCode'  => $coupon ? $coupon->get_code() : '',
+				'queryArg'    => self::QUERY_ARG,
+				'isCheckout'  => is_checkout(),
 				'mode'        => $coupon ? (string) $coupon->get_meta( self::META_MODE, true ) : '',
 				'amount'      => $coupon ? (float) $coupon->get_meta( self::META_AMOUNT, true ) : 0,
 				'targetCount' => count( $targets ),
