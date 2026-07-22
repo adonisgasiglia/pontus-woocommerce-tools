@@ -158,9 +158,6 @@ final class Campaign_Links {
 		}
 
 		$targets = $this->get_coupon_targets( $coupon );
-		if ( ! array_intersect( array( 'phone', 'meetings' ), $targets ) ) {
-			return;
-		}
 
 		wp_enqueue_style(
 			'pwt-campaign-prices',
@@ -187,6 +184,12 @@ final class Campaign_Links {
 			}
 		}
 
+		$base_product  = wc_get_product( Coupon_Addons::PRODUCT_ID );
+		$base_original = $base_product instanceof \WC_Product ? (float) $base_product->get_price() : 189.0;
+		$base_sale     = in_array( 'base', $targets, true )
+			? $this->get_target_sale_price( $coupon, 'base', $base_original )
+			: $base_original;
+
 		wp_localize_script(
 			'pwt-campaign-prices',
 			'pwtCampaignPrices',
@@ -196,6 +199,10 @@ final class Campaign_Links {
 				'mode'        => (string) $coupon->get_meta( self::META_MODE, true ),
 				'amount'      => (float) $coupon->get_meta( self::META_AMOUNT, true ),
 				'targetCount' => count( $targets ),
+				'basePrice'   => array(
+					'original' => $base_original,
+					'sale'     => $base_sale,
+				),
 				'prices'      => $prices,
 			)
 		);
