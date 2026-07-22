@@ -3,7 +3,7 @@
  * Plugin Name: Pontus WooCommerce Tools
  * Plugin URI: https://pontusescritorios.com.br
  * Description: Ferramentas personalizadas da Pontus para WooCommerce.
- * Version: 1.0.0
+ * Version: 1.1.0
  * Author: Pontus Escritórios Inteligentes
  * License: GPL2
  * Text Domain: pontus-woocommerce-tools
@@ -13,7 +13,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-define('PWT_VERSION', '1.0.0');
+define('PWT_VERSION', '1.1.0');
 define('PWT_PLUGIN_FILE', __FILE__);
 define('PWT_PLUGIN_PATH', plugin_dir_path(__FILE__));
 define('PWT_PLUGIN_URL', plugin_dir_url(__FILE__));
