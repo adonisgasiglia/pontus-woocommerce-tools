@@ -251,7 +251,7 @@ final class Coupon_Addons {
 		return sprintf(
 			/* translators: 1: coupon code, 2: eligible add-on names. */
 			__( 'Cupom %1$s: %2$s', 'pontus-woocommerce-tools' ),
-			$coupon->get_code(),
+			strtoupper( $coupon->get_code() ),
 			implode( ' + ', $selected_labels )
 		);
 	}
