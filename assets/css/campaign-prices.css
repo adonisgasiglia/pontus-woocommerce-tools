@@ -11,7 +11,7 @@
 }
 
 .pwt-campaign-option-price ins {
-	color: #17384d;
+	color: #3d8ec4;
 	font-weight: 700;
 	text-decoration: none;
 }
@@ -46,7 +46,12 @@
 }
 
 .pwt-campaign-summary-price ins {
-	color: #17384d;
+	color: #3d8ec4;
 	font-weight: 700;
 	text-decoration: none;
+}
+
+.pwt-plan-price-shortcode {
+	color: #17384d;
+	font: inherit;
 }
