@@ -170,6 +170,7 @@ final class Coupon_Addons {
 		update_post_meta( $coupon_id, self::META_MEETINGS, $meetings );
 
 		if ( 'yes' === $enabled && $coupon instanceof \WC_Coupon ) {
+			$coupon->set_discount_type( 'fixed_cart' );
 			$coupon->set_amount( 0 );
 			$coupon->save();
 		}
