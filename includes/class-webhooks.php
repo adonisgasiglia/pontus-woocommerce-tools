@@ -133,6 +133,26 @@ final class Webhooks {
 					'phone' => '5521999999999',
 					'cpf'   => '00000000000',
 					'cnpj'  => '',
+					'address' => array(
+						'address_1'    => 'Rua Exemplo',
+						'number'       => '123',
+						'neighborhood' => 'Centro',
+						'address_2'    => 'Sala 101',
+						'city'         => 'Rio de Janeiro',
+						'state'        => 'RJ',
+						'postcode'     => '20050-005',
+						'country'      => 'BR',
+					),
+				),
+				'fields'      => array(
+					'billing_address_1'    => 'Rua Exemplo',
+					'billing_number'       => '123',
+					'billing_neighborhood' => 'Centro',
+					'billing_address_2'    => 'Sala 101',
+					'billing_city'         => 'Rio de Janeiro',
+					'billing_state'        => 'RJ',
+					'billing_postcode'     => '20050-005',
+					'billing_country'      => 'BR',
 				),
 				'items'       => array(
 					array(
@@ -289,6 +309,7 @@ final class Webhooks {
 		$raw_fields = isset( $_POST['fields'] ) ? wp_unslash( $_POST['fields'] ) : '{}';
 		$fields     = json_decode( $raw_fields, true );
 		$fields     = is_array( $fields ) ? $this->sanitize_payload_array( $fields ) : array();
+		$fields     = $this->normalize_address_fields( $fields );
 
 		$state                  = $this->get_state( $id );
 		$state['checkout_id']   = $id;
@@ -620,7 +641,7 @@ final class Webhooks {
 	 * @return array
 	 */
 	private function build_checkout_payload( $state ) {
-		$fields = isset( $state['fields'] ) ? $state['fields'] : array();
+		$fields = $this->normalize_address_fields( isset( $state['fields'] ) ? $state['fields'] : array() );
 
 		return array(
 			'checkout_id'     => isset( $state['checkout_id'] ) ? $state['checkout_id'] : '',
@@ -644,6 +665,11 @@ final class Webhooks {
 	private function build_order_payload( $order ) {
 		$checkout_id = (string) $order->get_meta( self::ORDER_META_ID, true );
 		$state       = $checkout_id ? $this->get_state( $checkout_id ) : array();
+		$fields      = $this->order_fields(
+			$order,
+			isset( $state['fields'] ) && is_array( $state['fields'] ) ? $state['fields'] : array()
+		);
+		$address     = $this->address_from_fields( $fields );
 
 		return array(
 			'checkout_id' => $checkout_id,
@@ -660,16 +686,9 @@ final class Webhooks {
 				'company'    => $order->get_billing_company(),
 				'cpf'        => $this->first_order_meta( $order, array( '_billing_cpf', 'billing_cpf', '_cpf', 'cpf' ) ),
 				'cnpj'       => $this->first_order_meta( $order, array( '_billing_cnpj', 'billing_cnpj', '_cnpj', 'cnpj' ) ),
-				'address'    => array(
-					'address_1' => $order->get_billing_address_1(),
-					'address_2' => $order->get_billing_address_2(),
-					'city'      => $order->get_billing_city(),
-					'state'     => $order->get_billing_state(),
-					'postcode'  => $order->get_billing_postcode(),
-					'country'   => $order->get_billing_country(),
-				),
+				'address'    => $address,
 			),
-			'fields'      => isset( $state['fields'] ) ? $state['fields'] : $this->order_custom_fields( $order ),
+			'fields'      => $fields,
 			'items'       => $this->build_order_items( $order ),
 			'totals'      => array(
 				'subtotal' => $this->money( $order->get_subtotal() ),
@@ -947,6 +966,56 @@ final class Webhooks {
 			'company'    => isset( $fields['billing_company'] ) ? $fields['billing_company'] : '',
 			'cpf'        => $this->first_array_value( $fields, array( 'billing_cpf', 'cpf' ) ),
 			'cnpj'       => $this->first_array_value( $fields, array( 'billing_cnpj', 'cnpj' ) ),
+			'address'    => $this->address_from_fields( $fields ),
+		);
+	}
+
+	/**
+	 * Normalizes the billing address collected from the checkout.
+	 *
+	 * Efí uses the regular billing fields when available and otherwise injects
+	 * gn_billing_number and gn_billing_neighborhood.
+	 *
+	 * @param array $fields Checkout fields.
+	 * @return array
+	 */
+	private function normalize_address_fields( $fields ) {
+		$fields['billing_address_1']    = $this->first_array_value( $fields, array( 'billing_address_1' ) );
+		$fields['billing_number']       = $this->first_array_value( $fields, array( 'billing_number', 'gn_billing_number' ) );
+		$fields['billing_neighborhood'] = $this->first_array_value( $fields, array( 'billing_neighborhood', 'gn_billing_neighborhood' ) );
+		$fields['billing_address_2']    = $this->first_array_value( $fields, array( 'billing_address_2' ) );
+		$fields['billing_city']         = $this->first_array_value( $fields, array( 'billing_city' ) );
+		$fields['billing_state']        = $this->first_array_value( $fields, array( 'billing_state' ) );
+		$fields['billing_postcode']     = $this->first_array_value( $fields, array( 'billing_postcode' ) );
+		$fields['billing_country']      = $this->first_array_value( $fields, array( 'billing_country' ) );
+
+		if ( '' === $fields['billing_country'] ) {
+			$fields['billing_country'] = 'BR';
+		}
+
+		unset( $fields['gn_billing_number'], $fields['gn_billing_neighborhood'] );
+
+		return $fields;
+	}
+
+	/**
+	 * Returns the public customer address structure.
+	 *
+	 * @param array $fields Normalized checkout fields.
+	 * @return array
+	 */
+	private function address_from_fields( $fields ) {
+		$fields = $this->normalize_address_fields( $fields );
+
+		return array(
+			'address_1'   => $fields['billing_address_1'],
+			'number'      => $fields['billing_number'],
+			'neighborhood'=> $fields['billing_neighborhood'],
+			'address_2'   => $fields['billing_address_2'],
+			'city'        => $fields['billing_city'],
+			'state'       => $fields['billing_state'],
+			'postcode'    => $fields['billing_postcode'],
+			'country'     => $fields['billing_country'],
 		);
 	}
 
@@ -991,6 +1060,55 @@ final class Webhooks {
 		}
 
 		return $fields;
+	}
+
+	/**
+	 * Combines tracked checkout fields with the canonical WooCommerce order data.
+	 *
+	 * @param WC_Order $order        Order.
+	 * @param array    $state_fields Previously tracked checkout fields.
+	 * @return array
+	 */
+	private function order_fields( $order, $state_fields ) {
+		$fields = array_merge( $this->order_custom_fields( $order ), $state_fields );
+
+		$number = $this->first_order_meta(
+			$order,
+			array( '_billing_number', 'billing_number', '_gn_billing_number', 'gn_billing_number' )
+		);
+		if ( '' === $number ) {
+			$number = $this->first_array_value( $fields, array( 'billing_number', 'gn_billing_number' ) );
+		}
+
+		$neighborhood = $this->first_order_meta(
+			$order,
+			array( '_billing_neighborhood', 'billing_neighborhood', '_gn_billing_neighborhood', 'gn_billing_neighborhood' )
+		);
+		if ( '' === $neighborhood ) {
+			$neighborhood = $this->first_array_value( $fields, array( 'billing_neighborhood', 'gn_billing_neighborhood' ) );
+		}
+
+		$fields['billing_address_1']    = $this->first_non_empty( $order->get_billing_address_1(), $this->first_array_value( $fields, array( 'billing_address_1' ) ) );
+		$fields['billing_number']       = $number;
+		$fields['billing_neighborhood'] = $neighborhood;
+		$fields['billing_address_2']    = $this->first_non_empty( $order->get_billing_address_2(), $this->first_array_value( $fields, array( 'billing_address_2' ) ) );
+		$fields['billing_city']         = $this->first_non_empty( $order->get_billing_city(), $this->first_array_value( $fields, array( 'billing_city' ) ) );
+		$fields['billing_state']        = $this->first_non_empty( $order->get_billing_state(), $this->first_array_value( $fields, array( 'billing_state' ) ) );
+		$fields['billing_postcode']     = $this->first_non_empty( $order->get_billing_postcode(), $this->first_array_value( $fields, array( 'billing_postcode' ) ) );
+		$fields['billing_country']      = $this->first_non_empty( $order->get_billing_country(), $this->first_array_value( $fields, array( 'billing_country' ) ) );
+
+		return $this->normalize_address_fields( $fields );
+	}
+
+	/**
+	 * Returns the first non-empty scalar value.
+	 *
+	 * @param mixed $primary  Preferred value.
+	 * @param mixed $fallback Fallback value.
+	 * @return string
+	 */
+	private function first_non_empty( $primary, $fallback ) {
+		return '' !== (string) $primary ? (string) $primary : (string) $fallback;
 	}
 
 	/**
