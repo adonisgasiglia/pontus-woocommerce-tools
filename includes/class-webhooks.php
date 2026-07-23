@@ -716,6 +716,7 @@ final class Webhooks {
 	 */
 	private function build_cart_items() {
 		$selected = array();
+		$prices   = array();
 
 		if ( function_exists( 'WC' ) && WC()->cart ) {
 			foreach ( WC()->cart->get_cart() as $cart_item ) {
@@ -726,10 +727,25 @@ final class Webhooks {
 				$selected['office'] = true;
 				$options = isset( $cart_item['yith_wapo_options'] ) ? $cart_item['yith_wapo_options'] : array();
 				$this->detect_addons( $options, $selected );
+				$addon_prices = $this->addon_prices_from_data( $options, $selected );
+				$quantity     = isset( $cart_item['quantity'] ) ? max( 1, (int) $cart_item['quantity'] ) : 1;
+				$base_price   = isset( $cart_item['yith_wapo_item_price'] )
+					? (float) wc_format_decimal( $cart_item['yith_wapo_item_price'] )
+					: 0.0;
+
+				if ( $base_price <= 0 && isset( $cart_item['data'] ) && $cart_item['data'] instanceof \WC_Product ) {
+					$base_price = (float) $cart_item['data']->get_price();
+					$base_price -= array_sum( $addon_prices );
+				}
+
+				$prices['office'] = isset( $prices['office'] ) ? $prices['office'] + ( $base_price * $quantity ) : $base_price * $quantity;
+				foreach ( $addon_prices as $key => $price ) {
+					$prices[ $key ] = isset( $prices[ $key ] ) ? $prices[ $key ] + ( $price * $quantity ) : $price * $quantity;
+				}
 			}
 		}
 
-		$items   = $this->component_items( $selected );
+		$items   = $this->component_items( $selected, $prices );
 		$coupons = array();
 
 		if ( function_exists( 'WC' ) && WC()->cart ) {
@@ -752,6 +768,7 @@ final class Webhooks {
 	 */
 	private function build_order_items( $order ) {
 		$selected = array();
+		$prices   = array();
 
 		foreach ( $order->get_items( 'line_item' ) as $item ) {
 			if ( Coupon_Addons::PRODUCT_ID !== (int) $item->get_product_id() ) {
@@ -767,6 +784,16 @@ final class Webhooks {
 			}
 
 			$this->detect_addons( $meta, $selected );
+			$addon_prices = $this->addon_prices_from_data( $meta, $selected );
+			$gross_price  = (float) $item->get_subtotal();
+			$quantity     = max( 1, (int) $item->get_quantity() );
+			$base_price   = max( 0, $gross_price - ( array_sum( $addon_prices ) * $quantity ) );
+
+			$prices['office'] = isset( $prices['office'] ) ? $prices['office'] + $base_price : $base_price;
+			foreach ( $addon_prices as $key => $price ) {
+				$price          = $price * $quantity;
+				$prices[ $key ] = isset( $prices[ $key ] ) ? $prices[ $key ] + $price : $price;
+			}
 		}
 
 		$coupons = array();
@@ -777,7 +804,7 @@ final class Webhooks {
 			);
 		}
 
-		return $this->allocate_discounts( $this->component_items( $selected ), $coupons );
+		return $this->allocate_discounts( $this->component_items( $selected, $prices ), $coupons );
 	}
 
 	/**
@@ -799,12 +826,63 @@ final class Webhooks {
 	}
 
 	/**
+	 * Extracts selected YITH add-on prices from cart or order metadata.
+	 *
+	 * @param mixed $data     Raw YITH data.
+	 * @param array $selected Selected component map.
+	 * @return array<string, float>
+	 */
+	private function addon_prices_from_data( $data, $selected ) {
+		$json   = wp_json_encode( $data, JSON_UNESCAPED_UNICODE );
+		$prices = array();
+
+		$patterns = array(
+			'phone'    => '/atendimento\s+telef[oô]nico.*?\+\s*(?:R\$\s*)?([\d.,]+)/iu',
+			'meetings' => '/(?:pacote\s+)?mais\s+reuni[oõ]es.*?\+\s*(?:R\$\s*)?([\d.,]+)/iu',
+		);
+
+		foreach ( $patterns as $key => $pattern ) {
+			if ( empty( $selected[ $key ] ) ) {
+				continue;
+			}
+
+			if ( preg_match( $pattern, (string) $json, $matches ) ) {
+				$prices[ $key ] = $this->localized_money( $matches[1] );
+			}
+
+			if ( empty( $prices[ $key ] ) ) {
+				$prices[ $key ] = 'phone' === $key ? 50.00 : 350.00;
+			}
+		}
+
+		return $prices;
+	}
+
+	/**
+	 * Converts a Brazilian or API-formatted monetary value to float.
+	 *
+	 * @param string $value Monetary value.
+	 * @return float
+	 */
+	private function localized_money( $value ) {
+		$value = preg_replace( '/[^\d.,]/', '', (string) $value );
+
+		if ( false !== strpos( $value, ',' ) ) {
+			$value = str_replace( '.', '', $value );
+			$value = str_replace( ',', '.', $value );
+		}
+
+		return max( 0, (float) $value );
+	}
+
+	/**
 	 * Creates contract-ready components.
 	 *
 	 * @param array $selected Selected component map.
+	 * @param array $prices   Actual gross component prices.
 	 * @return array
 	 */
-	private function component_items( $selected ) {
+	private function component_items( $selected, $prices = array() ) {
 		$definitions = array(
 			'office' => array(
 				'name'        => 'Escritório Inteligente',
@@ -834,9 +912,9 @@ final class Webhooks {
 				'name'        => $definition['name'],
 				'description' => $definition['description'],
 				'quantity'    => 1,
-				'unit_price'  => $this->money( $definition['unit_price'] ),
+				'unit_price'  => $this->money( isset( $prices[ $key ] ) ? $prices[ $key ] : $definition['unit_price'] ),
 				'discount'    => 0.0,
-				'final_price' => $this->money( $definition['unit_price'] ),
+				'final_price' => $this->money( isset( $prices[ $key ] ) ? $prices[ $key ] : $definition['unit_price'] ),
 			);
 		}
 
