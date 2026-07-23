@@ -260,7 +260,7 @@ final class Webhooks {
 	public function track_checkout() {
 		check_ajax_referer( 'pwt_track_checkout', 'nonce' );
 
-		$event = isset( $_POST['event'] ) ? sanitize_key( wp_unslash( $_POST['event'] ) ) : '';
+		$event = isset( $_POST['event'] ) ? sanitize_text_field( wp_unslash( $_POST['event'] ) ) : '';
 		$id    = isset( $_POST['checkout_id'] ) ? sanitize_key( wp_unslash( $_POST['checkout_id'] ) ) : '';
 		$step  = isset( $_POST['step'] ) ? sanitize_key( wp_unslash( $_POST['step'] ) ) : '';
 
