@@ -2,7 +2,7 @@
 Contributors: adonisgasiglia
 Requires at least: 6.0
 Requires PHP: 7.4
-Stable tag: 1.2.13
+Stable tag: 1.3.0
 License: GPLv2 or later
 
 Personalizações do fluxo de contratação da Pontus Escritórios Inteligentes no WooCommerce.
@@ -16,7 +16,9 @@ Recursos atuais:
 * cupons restritos aos adicionais da Pontus;
 * desconto percentual, fixo ou gratuito;
 * suporte a Atendimento Telefônico e Pacote Mais Reuniões;
-* proteção do valor-base do Escritório Inteligente.
+* proteção do valor-base do Escritório Inteligente;
+* webhooks assinados para jornada, abandono, pedidos e pagamentos;
+* itens contratuais individualizados com valor original, desconto e valor final.
 
 == Installation ==
 
@@ -25,6 +27,16 @@ Recursos atuais:
 3. Mantenha WooCommerce e YITH Product Add-ons ativos.
 
 == Changelog ==
+
+= 1.3.0 =
+* Adiciona configuração de webhooks no menu WooCommerce.
+* Inclui referência recolhível dos eventos, cabeçalhos e payload no painel.
+* Rastreia as etapas reais do checkout multi-step com um checkout_id persistente.
+* Envia eventos imediatos de jornada, pedido criado e pagamento confirmado.
+* Detecta abandono após o prazo configurado, inclusive na etapa de pagamento.
+* Envia Escritório Inteligente, Atendimento Telefônico e Pacote Mais Reuniões como itens separados.
+* Informa valor original, desconto individual e valor final de cada item.
+* Assina entregas com HMAC SHA-256 e tenta novamente em falhas temporárias.
 
 = 1.2.13 =
 * Impede que o YITH selecione novamente um adicional após a primeira tentativa de desmarcação.
