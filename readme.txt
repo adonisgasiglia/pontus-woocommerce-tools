@@ -2,7 +2,7 @@
 Contributors: adonisgasiglia
 Requires at least: 6.0
 Requires PHP: 7.4
-Stable tag: 1.3.0
+Stable tag: 1.3.1
 License: GPLv2 or later
 
 Personalizações do fluxo de contratação da Pontus Escritórios Inteligentes no WooCommerce.
@@ -27,6 +27,10 @@ Recursos atuais:
 3. Mantenha WooCommerce e YITH Product Add-ons ativos.
 
 == Changelog ==
+
+= 1.3.1 =
+* Corrige o valor enviado aos gateways Pix e cartão da Efí quando o produto contém adicionais do YITH.
+* Usa o subtotal bruto gravado no item do pedido sem alterar o carrinho, o pedido ou outros meios de pagamento.
 
 = 1.3.0 =
 * Adiciona configuração de webhooks no menu WooCommerce.
