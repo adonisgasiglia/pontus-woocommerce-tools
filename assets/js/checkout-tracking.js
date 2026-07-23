@@ -77,7 +77,10 @@
 			if (
 				typeof value !== 'string' ||
 				/password|pass1|pass2|nonce|payment_token|card|cvv|cvc/i.test( key ) ||
-				! /^(billing_|shipping_|order_comments|customer_)/.test( key )
+				(
+					! /^(billing_|shipping_|order_comments|customer_)/.test( key ) &&
+					! /^(gn_billing_number|gn_billing_neighborhood)$/.test( key )
+				)
 			) {
 				return;
 			}
