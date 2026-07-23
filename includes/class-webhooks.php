@@ -286,6 +286,9 @@ final class Webhooks {
 		$state['last_step']     = $step;
 		$state['last_activity'] = time();
 		$state['fields']        = array_merge( isset( $state['fields'] ) ? $state['fields'] : array(), $fields );
+		$state['items']         = $this->build_cart_items();
+		$state['totals']        = $this->build_cart_totals();
+		$state['coupons']       = $this->cart_coupon_codes();
 		$state['sent_events']   = isset( $state['sent_events'] ) && is_array( $state['sent_events'] ) ? $state['sent_events'] : array();
 
 		$this->save_state( $id, $state );
@@ -567,10 +570,20 @@ final class Webhooks {
 			return;
 		}
 
-		$state             = $this->get_state( $id );
-		$state['order_id'] = $order->get_id();
-		$state['last_step'] = 'payment';
+		$state                  = $this->get_state( $id );
+		$state['order_id']      = $order->get_id();
+		$state['last_step']     = 'payment';
 		$state['last_activity'] = time();
+		$state['items']         = $this->build_order_items( $order );
+		$state['totals']        = array(
+			'subtotal' => $this->money( $order->get_subtotal() ),
+			'discount' => $this->money( $order->get_discount_total() ),
+			'shipping' => $this->money( $order->get_shipping_total() ),
+			'tax'      => $this->money( $order->get_total_tax() ),
+			'total'    => $this->money( $order->get_total() ),
+			'currency' => $order->get_currency(),
+		);
+		$state['coupons']       = array_map( 'strtoupper', $order->get_coupon_codes() );
 		$this->save_state( $id, $state );
 		$this->schedule_abandonment( $id, $state['last_activity'] );
 	}
@@ -591,9 +604,9 @@ final class Webhooks {
 			'last_activity_at'=> isset( $state['last_activity'] ) ? wp_date( DATE_ATOM, (int) $state['last_activity'] ) : null,
 			'customer'        => $this->customer_from_fields( $fields ),
 			'fields'          => $fields,
-			'items'           => $this->build_cart_items(),
-			'totals'          => $this->build_cart_totals(),
-			'coupons'         => $this->cart_coupon_codes(),
+			'items'           => isset( $state['items'] ) ? $state['items'] : $this->build_cart_items(),
+			'totals'          => isset( $state['totals'] ) ? $state['totals'] : $this->build_cart_totals(),
+			'coupons'         => isset( $state['coupons'] ) ? $state['coupons'] : $this->cart_coupon_codes(),
 		);
 	}
 
@@ -604,8 +617,11 @@ final class Webhooks {
 	 * @return array
 	 */
 	private function build_order_payload( $order ) {
+		$checkout_id = (string) $order->get_meta( self::ORDER_META_ID, true );
+		$state       = $checkout_id ? $this->get_state( $checkout_id ) : array();
+
 		return array(
-			'checkout_id' => (string) $order->get_meta( self::ORDER_META_ID, true ),
+			'checkout_id' => $checkout_id,
 			'order_id'    => $order->get_id(),
 			'order_number'=> $order->get_order_number(),
 			'status'      => $order->get_status(),
@@ -628,6 +644,7 @@ final class Webhooks {
 					'country'   => $order->get_billing_country(),
 				),
 			),
+			'fields'      => isset( $state['fields'] ) ? $state['fields'] : $this->order_custom_fields( $order ),
 			'items'       => $this->build_order_items( $order ),
 			'totals'      => array(
 				'subtotal' => $this->money( $order->get_subtotal() ),
@@ -922,6 +939,33 @@ final class Webhooks {
 			}
 		}
 		return '';
+	}
+
+	/**
+	 * Returns safe custom checkout fields saved on the order.
+	 *
+	 * @param WC_Order $order Order.
+	 * @return array
+	 */
+	private function order_custom_fields( $order ) {
+		$fields = array();
+
+		foreach ( $order->get_meta_data() as $metadata ) {
+			$data = $metadata->get_data();
+			$key  = ltrim( (string) $data['key'], '_' );
+
+			if (
+				! preg_match( '/^(billing_|shipping_|customer_)/', $key )
+				|| preg_match( '/password|token|card|cvv|cvc/i', $key )
+				|| ! is_scalar( $data['value'] )
+			) {
+				continue;
+			}
+
+			$fields[ sanitize_key( $key ) ] = sanitize_text_field( (string) $data['value'] );
+		}
+
+		return $fields;
 	}
 
 	/**
