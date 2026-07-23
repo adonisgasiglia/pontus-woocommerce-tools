@@ -63,6 +63,7 @@ final class Webhooks {
 		add_action( 'woocommerce_order_status_completed', array( $this, 'order_paid' ) );
 		add_action( 'woocommerce_order_status_failed', array( $this, 'order_failed' ) );
 		add_action( 'woocommerce_order_status_cancelled', array( $this, 'order_cancelled' ) );
+		add_action( 'woocommerce_thankyou', array( $this, 'clear_checkout_storage' ) );
 	}
 
 	/**
@@ -232,7 +233,15 @@ final class Webhooks {
 	 * Loads checkout tracking.
 	 */
 	public function enqueue_tracking() {
-		if ( ! is_checkout() || is_order_received_page() ) {
+		$settings = $this->get_settings();
+
+		if (
+			! is_checkout()
+			|| is_order_received_page()
+			|| 'yes' !== $settings['enabled']
+			|| empty( $settings['url'] )
+			|| empty( $settings['secret'] )
+		) {
 			return;
 		}
 
@@ -388,6 +397,19 @@ final class Webhooks {
 	}
 
 	/**
+	 * Clears browser correlation after an order is received.
+	 *
+	 * @param int $order_id Order ID.
+	 */
+	public function clear_checkout_storage( $order_id ) {
+		if ( ! $order_id ) {
+			return;
+		}
+
+		echo '<script>try{window.sessionStorage.removeItem("pwt_checkout_id");}catch(e){}</script>';
+	}
+
+	/**
 	 * Sends one status event per order.
 	 *
 	 * @param string $event    Event name.
@@ -446,18 +468,19 @@ final class Webhooks {
 	 */
 	public function deliver_webhook( $event, $payload, $attempt = 1 ) {
 		$settings = $this->get_settings();
-		if ( 'yes' !== $settings['enabled'] || empty( $settings['url'] ) ) {
+		if ( 'yes' !== $settings['enabled'] || empty( $settings['url'] ) || empty( $settings['secret'] ) ) {
 			return;
 		}
 
 		$delivery_id = isset( $payload['_delivery_id'] ) ? (string) $payload['_delivery_id'] : wp_generate_uuid4();
-		unset( $payload['_delivery_id'] );
+		$occurred_at = isset( $payload['_occurred_at'] ) ? (string) $payload['_occurred_at'] : wp_date( DATE_ATOM );
+		unset( $payload['_delivery_id'], $payload['_occurred_at'] );
 
 		$body = wp_json_encode(
 			array(
 				'event'       => $event,
 				'delivery_id' => $delivery_id,
-				'occurred_at' => wp_date( DATE_ATOM ),
+				'occurred_at' => $occurred_at,
 				'data'        => $payload,
 			),
 			JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES
@@ -502,6 +525,7 @@ final class Webhooks {
 
 		if ( $attempt < 5 ) {
 			$payload['_delivery_id'] = $delivery_id;
+			$payload['_occurred_at'] = $occurred_at;
 			$delay = MINUTE_IN_SECONDS * ( 2 ** ( $attempt - 1 ) );
 			$this->schedule_single_action( time() + $delay, 'pwt_deliver_webhook', array( $event, $payload, $attempt + 1 ) );
 		}
@@ -515,11 +539,12 @@ final class Webhooks {
 	 */
 	private function queue_event( $event, $payload ) {
 		$settings = $this->get_settings();
-		if ( 'yes' !== $settings['enabled'] || empty( $settings['url'] ) ) {
+		if ( 'yes' !== $settings['enabled'] || empty( $settings['url'] ) || empty( $settings['secret'] ) ) {
 			return;
 		}
 
 		$payload['_delivery_id'] = wp_generate_uuid4();
+		$payload['_occurred_at'] = wp_date( DATE_ATOM );
 
 		if ( function_exists( 'as_enqueue_async_action' ) ) {
 			as_enqueue_async_action( 'pwt_deliver_webhook', array( $event, $payload, 1 ), 'pontus-webhooks' );
