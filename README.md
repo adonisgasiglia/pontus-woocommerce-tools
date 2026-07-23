@@ -13,6 +13,7 @@ Plugin WordPress que centraliza as personalizações do fluxo de contratação d
 - desconto percentual, fixo ou gratuito;
 - suporte a Atendimento Telefônico e Pacote Mais Reuniões;
 - proteção do valor-base do produto contra o desconto desses cupons;
+- compatibilidade dos adicionais YITH com os pagamentos Pix e cartão da Efí;
 - gancho `pwt_loaded` para os próximos módulos.
 
 ## Requisitos

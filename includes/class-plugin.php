@@ -71,10 +71,12 @@ final class Plugin {
 
 		require_once PWT_PLUGIN_PATH . 'includes/class-coupon-addons.php';
 		require_once PWT_PLUGIN_PATH . 'includes/class-campaign-links.php';
+		require_once PWT_PLUGIN_PATH . 'includes/class-efi-compatibility.php';
 		require_once PWT_PLUGIN_PATH . 'includes/class-webhooks.php';
 
 		Coupon_Addons::instance();
 		Campaign_Links::instance();
+		Efi_Compatibility::instance();
 		Webhooks::instance();
 
 		/**
