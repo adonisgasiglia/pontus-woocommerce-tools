@@ -46,6 +46,9 @@
 	};
 
 	const autoSelectedTargets = new Set();
+	const userChangedTargets = new Set();
+	const synchronizingTargets = new Set();
+	const synchronizationTimers = new Map();
 
 	const formatter = new Intl.NumberFormat(
 		window.pwtCampaignPrices.locale || 'pt-BR',
@@ -186,6 +189,101 @@
 		} );
 	}
 
+	function getTargetForInput( input ) {
+		return Object.keys( selectors ).find( function ( target ) {
+			const wrapper = document.querySelector( selectors[ target ] );
+			return wrapper && wrapper.contains( input );
+		} ) || '';
+	}
+
+	function dispatchOptionEvents( input ) {
+		input.dispatchEvent( new Event( 'input', { bubbles: true } ) );
+		input.dispatchEvent( new Event( 'change', { bubbles: true } ) );
+	}
+
+	function isOptionIncludedInForm( option ) {
+		const form = option.input.closest( 'form.cart' );
+
+		if (
+			! form ||
+			! option.input.name ||
+			option.input.disabled ||
+			! option.input.checked
+		) {
+			return false;
+		}
+
+		try {
+			return new FormData( form ).getAll( option.input.name ).some( function ( value ) {
+				return String( value ) === String( option.input.value );
+			} );
+		} catch ( error ) {
+			return option.input.checked;
+		}
+	}
+
+	function synchronizeCampaignOption( target, forceEvents ) {
+		const option = getOptionData( target );
+
+		if (
+			! option ||
+			option.input.disabled ||
+			! option.input.isConnected ||
+			userChangedTargets.has( target ) ||
+			synchronizingTargets.has( target )
+		) {
+			return false;
+		}
+
+		const form = option.input.closest( 'form.cart' );
+		if ( ! form || ! option.input.name ) {
+			return false;
+		}
+
+		synchronizingTargets.add( target );
+
+		try {
+			const wasChecked = option.input.checked;
+
+			if ( ! wasChecked ) {
+				option.input.click();
+			}
+
+			if ( ! option.input.checked ) {
+				option.input.checked = true;
+				dispatchOptionEvents( option.input );
+			} else if ( wasChecked || forceEvents ) {
+				dispatchOptionEvents( option.input );
+			}
+
+			return isOptionIncludedInForm( option );
+		} finally {
+			synchronizingTargets.delete( target );
+		}
+	}
+
+	function scheduleOptionResynchronization( target ) {
+		if ( synchronizationTimers.has( target ) ) {
+			return;
+		}
+
+		const delays = [ 100, 400, 900 ];
+		const timers = delays.map( function ( delay, index ) {
+			return window.setTimeout( function () {
+				if ( ! userChangedTargets.has( target ) ) {
+					synchronizeCampaignOption( target, true );
+					renderSummaryPrice();
+				}
+
+				if ( index === delays.length - 1 ) {
+					synchronizationTimers.delete( target );
+				}
+			}, delay );
+		} );
+
+		synchronizationTimers.set( target, timers );
+	}
+
 	function preselectCampaignOptions() {
 		Object.keys( window.pwtCampaignPrices.prices ).forEach( function ( target ) {
 			const configured = window.pwtCampaignPrices.prices[ target ];
@@ -196,23 +294,30 @@
 				Number( configured.sale ) >= Number( configured.original ) ||
 				! option ||
 				option.input.disabled ||
-				autoSelectedTargets.has( target )
+				userChangedTargets.has( target ) ||
+				synchronizingTargets.has( target ) ||
+				( autoSelectedTargets.has( target ) && option.input.checked )
 			) {
 				return;
 			}
 
-			autoSelectedTargets.add( target );
-
-			if ( option.input.checked ) {
-				return;
+			if ( synchronizeCampaignOption( target, true ) ) {
+				autoSelectedTargets.add( target );
+				scheduleOptionResynchronization( target );
 			}
+		} );
+	}
 
-			option.input.click();
+	function synchronizeBeforeSubmission( form ) {
+		autoSelectedTargets.forEach( function ( target ) {
+			const option = getOptionData( target );
 
-			if ( ! option.input.checked ) {
-				option.input.checked = true;
-				option.input.dispatchEvent( new Event( 'input', { bubbles: true } ) );
-				option.input.dispatchEvent( new Event( 'change', { bubbles: true } ) );
+			if (
+				option &&
+				form.contains( option.input ) &&
+				! userChangedTargets.has( target )
+			) {
+				synchronizeCampaignOption( target, true );
 			}
 		} );
 	}
@@ -224,11 +329,44 @@
 	}
 
 	document.addEventListener( 'DOMContentLoaded', renderCampaignPrices );
+	document.addEventListener( 'click', function ( event ) {
+		if ( event.isTrusted ) {
+			Object.keys( selectors ).forEach( function ( target ) {
+				const wrapper = document.querySelector( selectors[ target ] );
+
+				if ( wrapper && wrapper.contains( event.target ) ) {
+					userChangedTargets.add( target );
+				}
+			} );
+		}
+
+		const submitButton = event.target.closest(
+			'form.cart .single_add_to_cart_button, form.cart button[type="submit"], form.cart input[type="submit"]'
+		);
+
+		if ( submitButton ) {
+			const form = submitButton.closest( 'form.cart' );
+			if ( form ) {
+				synchronizeBeforeSubmission( form );
+			}
+		}
+	}, true );
 	document.addEventListener( 'change', function ( event ) {
 		if ( event.target.matches( '.yith-wapo-option-value' ) ) {
+			const target = getTargetForInput( event.target );
+
+			if ( target && event.isTrusted ) {
+				userChangedTargets.add( target );
+			}
+
 			renderCampaignPrices();
 		}
 	} );
+	document.addEventListener( 'submit', function ( event ) {
+		if ( event.target.matches( 'form.cart' ) ) {
+			synchronizeBeforeSubmission( event.target );
+		}
+	}, true );
 	window.addEventListener( 'load', renderCampaignPrices );
 
 	if ( Object.keys( window.pwtCampaignPrices.prices ).length || document.querySelector( '[data-pwt-plan-price]' ) ) {
