@@ -58,10 +58,56 @@
 		}
 	);
 
-	function getSalePrice( target, original ) {
-		const configured = window.pwtCampaignPrices.prices[ target ];
+	function getCampaignTargets() {
+		if ( Array.isArray( window.pwtCampaignPrices.targets ) ) {
+			return window.pwtCampaignPrices.targets;
+		}
 
-		if ( ! configured ) {
+		const targets = Object.keys( window.pwtCampaignPrices.prices );
+		const basePrice = window.pwtCampaignPrices.basePrice || {};
+
+		if ( Number( basePrice.sale ) < Number( basePrice.original ) ) {
+			targets.push( 'base' );
+		}
+
+		return targets;
+	}
+
+	function getOriginalPrice( target ) {
+		if ( target === 'base' ) {
+			return Number( window.pwtCampaignPrices.basePrice.original ) || 0;
+		}
+
+		const wrapper = document.querySelector( selectors[ target ] );
+		const input = wrapper ? wrapper.querySelector( '.yith-wapo-option-value' ) : null;
+		const configured = window.pwtCampaignPrices.prices[ target ];
+		const defaultPrice = input ? Number.parseFloat( input.dataset.defaultPrice ) : NaN;
+		const currentPrice = input ? Number.parseFloat( input.dataset.price ) : NaN;
+		const fallback = configured ? Number( configured.original ) : 0;
+
+		return Number.isFinite( defaultPrice ) && defaultPrice > 0
+			? defaultPrice
+			: ( Number.isFinite( currentPrice ) && currentPrice > 0 ? currentPrice : fallback );
+	}
+
+	function calculateDiscount( eligibleTotal ) {
+		const amount = Math.max( Number( window.pwtCampaignPrices.amount ) || 0, 0 );
+
+		if ( window.pwtCampaignPrices.mode === 'free' ) {
+			return eligibleTotal;
+		}
+
+		if ( window.pwtCampaignPrices.mode === 'percent' ) {
+			return Math.min( eligibleTotal * Math.min( amount, 100 ) / 100, eligibleTotal );
+		}
+
+		return Math.min( amount, eligibleTotal );
+	}
+
+	function getSalePrice( target, original ) {
+		const targets = getCampaignTargets();
+
+		if ( ! targets.includes( target ) ) {
 			return original;
 		}
 
@@ -74,12 +120,18 @@
 			return Math.max( 0, original * ( 1 - percentage / 100 ) );
 		}
 
-		if ( window.pwtCampaignPrices.targetCount === 1 ) {
+		if ( Number( window.pwtCampaignPrices.targetCount ) === 1 ) {
 			return Math.max( 0, original - ( Number( window.pwtCampaignPrices.amount ) || 0 ) );
 		}
 
-		const ratio = configured.original > 0 ? configured.sale / configured.original : 1;
-		return Math.max( 0, original * ratio );
+		const eligibleTotal = targets.reduce( function ( total, targetKey ) {
+			return total + getOriginalPrice( targetKey );
+		}, 0 );
+		const allocatedDiscount = eligibleTotal > 0
+			? calculateDiscount( eligibleTotal ) * original / eligibleTotal
+			: 0;
+
+		return Math.max( 0, original - allocatedDiscount );
 	}
 
 	function getOptionData( target ) {
@@ -94,13 +146,7 @@
 			return null;
 		}
 
-		const configured = window.pwtCampaignPrices.prices[ target ];
-		const defaultPrice = Number.parseFloat( input.dataset.defaultPrice );
-		const currentPrice = Number.parseFloat( input.dataset.price );
-		const fallback = configured ? Number( configured.original ) : 0;
-		const original = Number.isFinite( defaultPrice ) && defaultPrice > 0
-			? defaultPrice
-			: ( Number.isFinite( currentPrice ) && currentPrice > 0 ? currentPrice : fallback );
+		const original = getOriginalPrice( target );
 
 		return {
 			wrapper,
@@ -145,19 +191,20 @@
 		}
 
 		let originalTotal = Number( window.pwtCampaignPrices.basePrice.original ) || 0;
-		let saleTotal = Number( window.pwtCampaignPrices.basePrice.sale );
-		if ( ! Number.isFinite( saleTotal ) ) {
-			saleTotal = originalTotal;
-		}
+		let eligibleTotal = getCampaignTargets().includes( 'base' ) ? originalTotal : 0;
 
 		Object.keys( selectors ).forEach( function ( target ) {
 			const option = getOptionData( target );
 
 			if ( option && option.input.checked ) {
 				originalTotal += option.original;
-				saleTotal += option.sale;
+				if ( getCampaignTargets().includes( target ) ) {
+					eligibleTotal += option.original;
+				}
 			}
 		} );
+
+		const saleTotal = Math.max( 0, originalTotal - calculateDiscount( eligibleTotal ) );
 
 		const signature = originalTotal.toFixed( 4 ) + ':' + saleTotal.toFixed( 4 );
 
@@ -291,8 +338,8 @@
 
 			if (
 				! configured ||
-				Number( configured.sale ) >= Number( configured.original ) ||
 				! option ||
+				option.sale >= option.original ||
 				option.input.disabled ||
 				userChangedTargets.has( target ) ||
 				synchronizingTargets.has( target ) ||
