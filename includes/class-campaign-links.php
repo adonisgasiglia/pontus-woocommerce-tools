@@ -293,6 +293,7 @@ final class Campaign_Links {
 				'mode'        => $coupon ? (string) $coupon->get_meta( self::META_MODE, true ) : '',
 				'amount'      => $coupon ? (float) $coupon->get_meta( self::META_AMOUNT, true ) : 0,
 				'targetCount' => count( $targets ),
+				'targets'     => array_values( $targets ),
 				'basePrice'   => array(
 					'original' => $base_original,
 					'sale'     => $base_sale,

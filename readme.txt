@@ -2,7 +2,7 @@
 Contributors: adonisgasiglia
 Requires at least: 6.0
 Requires PHP: 7.4
-Stable tag: 1.3.3
+Stable tag: 1.3.5
 License: GPLv2 or later
 
 Personalizações do fluxo de contratação da Pontus Escritórios Inteligentes no WooCommerce.
@@ -27,6 +27,15 @@ Recursos atuais:
 3. Mantenha WooCommerce e YITH Product Add-ons ativos.
 
 == Changelog ==
+
+= 1.3.5 =
+* Calcula a exibição dos cupons com os preços atuais dos adicionais carregados pelo YITH.
+* Corrige o desconto fixo de R$ 20 sobre Atendimento Telefônico de R$ 49 para exibir R$ 29.
+* Mantém o total visual consistente com descontos fixos, percentuais e gratuitos.
+
+= 1.3.4 =
+* Sincroniza a pré-seleção visual dos adicionais promocionais com os dados enviados pelo formulário do YITH.
+* Preserva a opção do cliente de desmarcar manualmente o adicional.
 
 = 1.3.3 =
 * Usa os preços reais do produto e dos adicionais nos itens enviados pelos webhooks.
