@@ -273,13 +273,18 @@ final class Webhooks {
 			true
 		);
 
-		wp_localize_script(
-			'pwt-checkout-tracking',
-			'pwtCheckoutTracking',
+		$tracking_config = apply_filters(
+			'pwt_checkout_tracking_config',
 			array(
 				'ajaxUrl' => admin_url( 'admin-ajax.php' ),
 				'nonce'   => wp_create_nonce( 'pwt_track_checkout' ),
 			)
+		);
+
+		wp_localize_script(
+			'pwt-checkout-tracking',
+			'pwtCheckoutTracking',
+			$tracking_config
 		);
 	}
 
@@ -1149,6 +1154,13 @@ final class Webhooks {
 	 */
 	private function order_fields( $order, $state_fields ) {
 		$fields = array_merge( $this->order_custom_fields( $order ), $state_fields );
+
+		foreach ( array( 'lead_id', 'origin', 'plan_recommended', 'phone_recommended' ) as $context_key ) {
+			$value = $order->get_meta( '_pwt_aurora_' . $context_key, true );
+			if ( '' !== (string) $value ) {
+				$fields[ 'aurora_' . $context_key ] = sanitize_text_field( (string) $value );
+			}
+		}
 
 		$number = $this->first_order_meta(
 			$order,

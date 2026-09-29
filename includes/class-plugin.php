@@ -73,11 +73,13 @@ final class Plugin {
 		require_once PWT_PLUGIN_PATH . 'includes/class-campaign-links.php';
 		require_once PWT_PLUGIN_PATH . 'includes/class-efi-compatibility.php';
 		require_once PWT_PLUGIN_PATH . 'includes/class-webhooks.php';
+		require_once PWT_PLUGIN_PATH . 'includes/class-aurora-context.php';
 
 		Coupon_Addons::instance();
 		Campaign_Links::instance();
 		Efi_Compatibility::instance();
 		Webhooks::instance();
+		Aurora_Context::instance();
 
 		/**
 		 * Fires when Pontus WooCommerce Tools is ready.

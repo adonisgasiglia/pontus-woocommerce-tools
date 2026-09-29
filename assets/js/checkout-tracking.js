@@ -88,6 +88,14 @@
 			fields[ key ] = value;
 		} );
 
+		if ( config.auroraContext && typeof config.auroraContext === 'object' ) {
+			Object.keys( config.auroraContext ).forEach( function ( key ) {
+				if ( /^aurora_[a-z0-9_]+$/.test( key ) && typeof config.auroraContext[ key ] === 'string' ) {
+					fields[ key ] = config.auroraContext[ key ];
+				}
+			} );
+		}
+
 		return fields;
 	}
 

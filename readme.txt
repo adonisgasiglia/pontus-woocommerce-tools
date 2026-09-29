@@ -2,7 +2,7 @@
 Contributors: adonisgasiglia
 Requires at least: 6.0
 Requires PHP: 7.4
-Stable tag: 1.3.5
+Stable tag: 1.4.0
 License: GPLv2 or later
 
 Personalizações do fluxo de contratação da Pontus Escritórios Inteligentes no WooCommerce.
@@ -27,6 +27,12 @@ Recursos atuais:
 3. Mantenha WooCommerce e YITH Product Add-ons ativos.
 
 == Changelog ==
+
+= 1.4.0 =
+* Lê o contexto seguro da Aurora nos links de contratação.
+* Pré-seleciona Pacote Mais Horas e Atendimento Telefônico sem impedir alterações do cliente.
+* Persiste a identificação do lead, a recomendação e a seleção final no pedido.
+* Inclui o contexto da Aurora nos eventos já enviados ao n8n.
 
 = 1.3.5 =
 * Calcula a exibição dos cupons com os preços atuais dos adicionais carregados pelo YITH.
