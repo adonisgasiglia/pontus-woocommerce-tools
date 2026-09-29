@@ -856,7 +856,7 @@ final class Webhooks {
 			}
 
 			if ( empty( $prices[ $key ] ) ) {
-				$prices[ $key ] = 'phone' === $key ? 50.00 : 350.00;
+				$prices[ $key ] = 'phone' === $key ? 49.00 : 350.00;
 			}
 		}
 
@@ -897,7 +897,7 @@ final class Webhooks {
 			'phone' => array(
 				'name'        => 'Atendimento Telefônico',
 				'description' => 'Número exclusivo e atendimento telefônico',
-				'unit_price'  => 50.00,
+				'unit_price'  => 49.00,
 			),
 			'meetings' => array(
 				'name'        => 'Pacote Mais Reuniões',

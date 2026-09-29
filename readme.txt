@@ -2,7 +2,7 @@
 Contributors: adonisgasiglia
 Requires at least: 6.0
 Requires PHP: 7.4
-Stable tag: 1.4.0
+Stable tag: 1.4.1
 License: GPLv2 or later
 
 Personalizações do fluxo de contratação da Pontus Escritórios Inteligentes no WooCommerce.
@@ -27,6 +27,11 @@ Recursos atuais:
 3. Mantenha WooCommerce e YITH Product Add-ons ativos.
 
 == Changelog ==
+
+= 1.4.1 =
+* Alinha o valor de fallback do Atendimento Telefônico aos R$ 49 cobrados no site.
+* Mantém os itens e totais enviados ao n8n consistentes quando o YITH não expõe o preço do adicional.
+* Aceita somente identificadores UUID válidos nos links da Aurora.
 
 = 1.4.0 =
 * Lê o contexto seguro da Aurora nos links de contratação.

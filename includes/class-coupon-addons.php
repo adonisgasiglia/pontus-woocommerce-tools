@@ -34,7 +34,7 @@ final class Coupon_Addons {
 	public const PRODUCT_ID = 19;
 
 	private const ADDON_FALLBACK_PRICES = array(
-		'phone'    => 50.0,
+		'phone'    => 49.0,
 		'meetings' => 350.0,
 	);
 

@@ -250,7 +250,7 @@ final class Aurora_Context {
 	 */
 	private function sanitize_context( $context ) {
 		$lead_id = isset( $context['aurora_lead_id'] ) ? sanitize_text_field( (string) $context['aurora_lead_id'] ) : '';
-		$lead_id = preg_match( '/^[a-zA-Z0-9_-]{1,128}$/', $lead_id ) ? $lead_id : '';
+		$lead_id = preg_match( '/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i', $lead_id ) ? $lead_id : '';
 
 		$origin = isset( $context['aurora_origin'] ) ? sanitize_key( (string) $context['aurora_origin'] ) : '';
 		$origin = 'aurora' === $origin ? 'aurora' : '';

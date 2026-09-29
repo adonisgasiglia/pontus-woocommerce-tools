@@ -265,7 +265,7 @@ final class Campaign_Links {
 		);
 
 		$prices = array();
-		foreach ( array( 'phone' => 50.0, 'meetings' => 350.0 ) as $target => $original ) {
+		foreach ( array( 'phone' => 49.0, 'meetings' => 350.0 ) as $target => $original ) {
 			if ( $coupon && in_array( $target, $targets, true ) ) {
 				$prices[ $target ] = array(
 					'original' => $original,
@@ -398,7 +398,7 @@ final class Campaign_Links {
 
 		$target_prices = array(
 			'base'     => 189.0,
-			'phone'    => 50.0,
+			'phone'    => 49.0,
 			'meetings' => 350.0,
 		);
 		$target_prices[ $target ] = $original;
